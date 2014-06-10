@@ -63,6 +63,7 @@ class mrp_repair(osv.osv):
 
     _columns = {
         'name': fields.char('Repair Reference',size=24, required=True, states={'confirmed':[('readonly',True)]}),
+        '_create_date' : fields.datetime('Create Date'),
         'partner_id' : fields.many2one('res.partner', 'Partner', select=True, help='Choose partner for whom the order will be invoiced and delivered.', states={'confirmed':[('readonly',True)]}),
         'address_id': fields.many2one('res.partner', 'Delivery Address', domain="[('parent_id','=',partner_id)]", states={'confirmed':[('readonly',True)]}),
         'default_address_id': fields.function(_get_default_address, type="many2one", relation="res.partner"),
@@ -93,8 +94,7 @@ class mrp_repair(osv.osv):
             ("after_repair","After Repair")
            ], "Invoice Method",
             select=True, required=True, states={'draft':[('readonly',False)]}, readonly=True, help='Selecting \'Before Repair\' or \'After Repair\' will allow you to generate invoice before or after the repair is done respectively. \'No invoice\' means you don\'t want to generate invoice for this repair order.'),
-        'invoice_id': fields.many2one('account.invoice', 'Invoice', readonly=True),
-        #'picking_id': fields.many2one('stock.picking', 'Picking',readonly=True),        
+        'invoice_id': fields.many2one('account.invoice', 'Invoice', readonly=True),        
         'internal_notes': fields.text('Internal Notes'),
         'quotation_notes': fields.text('Quotation Notes'),
         'company_id': fields.many2one('res.company', 'Company'),
@@ -119,6 +119,7 @@ class mrp_repair(osv.osv):
 
     _defaults = {
         'state': lambda *a: 'draft',
+        '_create_date': fields.datetime.now,
         'name': lambda obj, cr, uid, context: obj.pool.get('ir.sequence').get(cr, uid, 'mrp.repair'),
         'invoice_method': lambda *a: 'after_repair',
         'company_id': lambda self, cr, uid, context: self.pool.get('res.company')._company_default_get(cr, uid, 'mrp.repair', context=context),
