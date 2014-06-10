@@ -7,7 +7,6 @@ import openerp.addons.decimal_precision as dp
 #OK
 class mrp_repair(osv.osv):
     _name = 'mrp.repair'
-    _inherit = 'mail.thread'
     _description = 'Repair Order'
 
     def _amount_untaxed(self, cr, uid, ids, field_name, arg, context=None):
@@ -95,7 +94,7 @@ class mrp_repair(osv.osv):
            ], "Invoice Method",
             select=True, required=True, states={'draft':[('readonly',False)]}, readonly=True, help='Selecting \'Before Repair\' or \'After Repair\' will allow you to generate invoice before or after the repair is done respectively. \'No invoice\' means you don\'t want to generate invoice for this repair order.'),
         'invoice_id': fields.many2one('account.invoice', 'Invoice', readonly=True),
-        'picking_id': fields.many2one('stock.picking', 'Picking',readonly=True),        
+        #'picking_id': fields.many2one('stock.picking', 'Picking',readonly=True),        
         'internal_notes': fields.text('Internal Notes'),
         'quotation_notes': fields.text('Quotation Notes'),
         'company_id': fields.many2one('res.company', 'Company'),
@@ -134,7 +133,7 @@ class mrp_repair(osv.osv):
             'repaired':False,
             'invoiced':False,
             'invoice_id': False,
-            'picking_id': False,
+            #'picking_id': False,
             'name': self.pool.get('ir.sequence').get(cr, uid, 'mrp.repair'),
         })
         return super(mrp_repair, self).copy(cr, uid, id, default, context)
