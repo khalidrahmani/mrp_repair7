@@ -109,7 +109,6 @@ class mrp_repair(osv.osv):
         'location_id': fields.many2one('stock.location', 'Current Location', select=True, readonly=True, states={'draft':[('readonly',False)], 'confirmed':[('readonly',True)]}),
         'location_dest_id': fields.many2one('stock.location', 'Delivery Location', readonly=True, states={'draft':[('readonly',False)], 'confirmed':[('readonly',True)]}),
         'move_id': fields.many2one('stock.move', 'Move',required=True, domain="[('product_id','=',product_id)]", readonly=True, states={'draft':[('readonly',False)]}),
-        'guarantee_limit': fields.date('Warranty Expiration', help="The warranty expiration limit is computed as: last move date + warranty defined on selected product. If the current date is below the warranty expiration limit, each operation and fee you will add will be set as 'not to invoiced' by default. Note that you can change manually afterwards.", states={'confirmed':[('readonly',True)]}),
         'operations' : fields.one2many('mrp.repair.line', 'repair_id', 'Operation Lines', readonly=True, states={'draft':[('readonly',False)]}),
         'pricelist_id': fields.many2one('product.pricelist', 'Pricelist', help='Pricelist of the selected partner.'),
         'partner_invoice_id':fields.many2one('res.partner', 'Invoicing Address'),
@@ -171,7 +170,6 @@ class mrp_repair(osv.osv):
         """
         return {'value': {
                     'move_id': False,
-                    'guarantee_limit' :False,
                     'location_id':  False,
                     'location_dest_id': False,
                 }
@@ -185,14 +183,13 @@ class mrp_repair(osv.osv):
         @return: Dictionary of values.
         """
         data = {}
-        data['value'] = {'guarantee_limit': False, 'location_id': False, 'partner_id': False}
+        data['value'] = {'location_id': False, 'partner_id': False}
         if not prod_id:
             return data
         if move_id:
             move =  self.pool.get('stock.move').browse(cr, uid, move_id)
             product = self.pool.get('product.product').browse(cr, uid, prod_id)
             limit = datetime.strptime(move.date_expected, '%Y-%m-%d %H:%M:%S') + relativedelta(months=int(product.warranty))
-            data['value']['guarantee_limit'] = limit.strftime('%Y-%m-%d')
             data['value']['location_id'] = move.location_dest_id.id
             data['value']['location_dest_id'] = move.location_dest_id.id
             if move.partner_id:
@@ -427,7 +424,7 @@ class mrp_repair(osv.osv):
 
 class ProductChangeMixin(object):
     def product_id_change(self, cr, uid, ids, pricelist, product, uom=False,
-                          product_uom_qty=0, partner_id=False, guarantee_limit=False):
+                          product_uom_qty=0, partner_id=False):
         """ On change of product it sets product quantity, tax account, name,
         uom of product, unit price and price subtotal.
         @param pricelist: Pricelist of current record.
@@ -435,7 +432,6 @@ class ProductChangeMixin(object):
         @param uom: UoM of current record.
         @param product_uom_qty: Quantity of current record.
         @param partner_id: Partner of current record.
-        @param guarantee_limit: Guarantee limit of current record.
         @return: Dictionary of values and warning message.
         """
         result = {}
