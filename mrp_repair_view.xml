@@ -49,7 +49,6 @@
                             <field name="address_id" groups="sale.group_delivery_invoice_address"/>
                             <field name="move_id" on_change="onchange_move_id(product_id, move_id)" context="{'default_product_id':product_id}"/>
                             <field name="location_id" attrs="{'required':True}" groups="stock.group_locations"/>
-                            <field name="prodlot_id" on_change="onchange_lot_id(prodlot_id,product_id)" groups="stock.group_production_lot" string="Serial Number"/>
                         </group>
                         <group>
                             <field name="guarantee_limit"/>
@@ -117,7 +116,7 @@
                     </page>
                     <page string="Invoicing">
                         <group col="4">
-                            <field name="invoice_method"/>
+                            <field name="invoice_method" attrs="{'readonly':True}"/>
                             <field name="partner_invoice_id" attrs="{'readonly':[('invoice_method','=', 'none')],'required':[('invoice_method','!=','none')]}" groups="sale.group_delivery_invoice_address"/>
                             <field
                                 name="pricelist_id" groups="product.group_sale_pricelist" context="{'product_id':product_id}"

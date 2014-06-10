@@ -235,41 +235,6 @@ class mrp_repair(osv.osv):
                 }
         }
 
-    def onchange_lot_id(self, cr, uid, ids, lot, product_id):
-        """ On change of Serial Number sets the values of source location,
-        destination location, move and guarantee limit.
-        @param lot: Changed id of Serial Number.
-        @param product_id: Product id from current record.
-        @return: Dictionary of values.
-        """
-        move_obj = self.pool.get('stock.move')
-        data = {}
-        data['value'] = {
-            'location_id': False,
-            'location_dest_id': False,
-            'move_id': False,
-            'guarantee_limit': False
-        }
-
-        if not lot:
-            return data
-        move_ids = move_obj.search(cr, uid, [('prodlot_id', '=', lot)])
-
-        if not len(move_ids):
-            return data
-
-        def get_last_move(lst_move):
-            while lst_move.move_dest_id and lst_move.move_dest_id.state == 'done':
-                lst_move = lst_move.move_dest_id
-            return lst_move
-
-        move_id = move_ids[0]
-        move = get_last_move(move_obj.browse(cr, uid, move_id))
-        data['value']['move_id'] = move.id
-        d = self.onchange_move_id(cr, uid, ids, product_id, move.id)
-        data['value'].update(d['value'])
-        return data
-
     def action_cancel_draft(self, cr, uid, ids, *args):
         """ Cancels repair order when it is in 'Draft' state.
         @param *arg: Arguments
