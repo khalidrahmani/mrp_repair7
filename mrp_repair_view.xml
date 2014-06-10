@@ -75,7 +75,6 @@
                                             <field name="to_invoice"/>
                                             <field name="tax_id" widget="many2many_tags" domain="[('parent_id','=',False),('type_tax_use','&lt;&gt;','purchase')]"/>
                                             <field name="invoiced"/>
-                                            <field name='prodlot_id' groups="stock.group_production_lot" string="Serial Number"/>
                                             <field name="location_id" groups="stock.group_locations"/>
                                             <field name="location_dest_id" groups="stock.group_locations"/>
                                         </group>
@@ -91,7 +90,6 @@
                             <tree string="Operations" editable="bottom">
                                 <field name="product_id" on_change="product_id_change(parent.pricelist_id,product_id,product_uom,product_uom_qty, parent.partner_id)"/>
                                 <field name='name'/>
-                                <field name="prodlot_id" groups="stock.group_production_lot" string="Serial Number"/>
                                 <field name="location_id" groups="stock.group_locations"/>
                                 <field name="location_dest_id" groups="stock.group_locations"/>
                                 <field name="product_uom_qty" string="Quantity"/>

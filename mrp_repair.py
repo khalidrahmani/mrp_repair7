@@ -90,7 +90,6 @@ class mrp_repair(osv.osv):
         'partner_id' : fields.many2one('res.partner', 'Partner', select=True, help='Choose partner for whom the order will be invoiced and delivered.', states={'confirmed':[('readonly',True)]}),
         'address_id': fields.many2one('res.partner', 'Delivery Address', domain="[('parent_id','=',partner_id)]", states={'confirmed':[('readonly',True)]}),
         'default_address_id': fields.function(_get_default_address, type="many2one", relation="res.partner"),
-        'prodlot_id': fields.many2one('stock.production.lot', 'Lot Number', select=True, states={'draft':[('readonly',False)]},domain="[('product_id','=',product_id)]"),
         'state': fields.selection([
             ('draft','Quotation'),
             ('cancel','Cancelled'),
@@ -171,7 +170,6 @@ class mrp_repair(osv.osv):
         @return: Dictionary of values.
         """
         return {'value': {
-                    'prodlot_id': False,
                     'move_id': False,
                     'guarantee_limit' :False,
                     'location_id':  False,
@@ -187,7 +185,7 @@ class mrp_repair(osv.osv):
         @return: Dictionary of values.
         """
         data = {}
-        data['value'] = {'guarantee_limit': False, 'location_id': False, 'prodlot_id': False, 'partner_id': False}
+        data['value'] = {'guarantee_limit': False, 'location_id': False, 'partner_id': False}
         if not prod_id:
             return data
         if move_id:
@@ -197,7 +195,6 @@ class mrp_repair(osv.osv):
             data['value']['guarantee_limit'] = limit.strftime('%Y-%m-%d')
             data['value']['location_id'] = move.location_dest_id.id
             data['value']['location_dest_id'] = move.location_dest_id.id
-            data['value']['prodlot_id'] = move.prodlot_id.id
             if move.partner_id:
                 data['value']['partner_id'] = move.partner_id.id
             else:
@@ -263,9 +260,6 @@ class mrp_repair(osv.osv):
                 self.write(cr, uid, [o.id], {'state': '2binvoiced'})
             else:
                 self.write(cr, uid, [o.id], {'state': 'confirmed'})
-                for line in o.operations:
-                    if line.product_id.track_production and not line.prodlot_id:
-                        raise osv.except_osv(_('Warning!'), _("Serial number is required for operation line with product '%s'") % (line.product_id.name))
                 mrp_line_obj.write(cr, uid, [l.id for l in o.operations], {'state': 'confirmed'})
         return True
 
@@ -423,7 +417,6 @@ class mrp_repair(osv.osv):
                     'location_id': move.location_id.id,
                     'location_dest_id': move.location_dest_id.id,
                     'tracking_id': False,
-                    'prodlot_id': move.prodlot_id and move.prodlot_id.id or False,
                     'state': 'assigned',
                 })
                 move_obj.action_done(cr, uid, [move_id], context=context)
@@ -528,7 +521,6 @@ class mrp_repair_line(osv.osv, ProductChangeMixin):
         'tax_id': fields.many2many('account.tax', 'repair_operation_line_tax', 'repair_operation_line_id', 'tax_id', 'Taxes'),
         'product_uom_qty': fields.float('Quantity', digits_compute= dp.get_precision('Product Unit of Measure'), required=True),
         'product_uom': fields.many2one('product.uom', 'Product Unit of Measure', required=True),
-        'prodlot_id': fields.many2one('stock.production.lot', 'Lot Number',domain="[('product_id','=',product_id)]"),
         'invoice_line_id': fields.many2one('account.invoice.line', 'Invoice Line', readonly=True),
         'location_id': fields.function(_get_default_location, type="many2one", relation="stock.location"),         
         'location_dest_id': fields.function(_get_default_location, type="many2one", relation="stock.location"),
