@@ -31,10 +31,9 @@ class mrp_repair(osv.osv):
             val = 0.0
             cur = repair.pricelist_id.currency_id
             for line in repair.operations:                
-                if line.to_invoice:
-                    tax_calculate = tax_obj.compute_all(cr, uid, line.tax_id, line.price_unit, line.product_uom_qty, line.product_id, repair.partner_id)
-                    for c in tax_calculate['taxes']:
-                        val += c['amount']
+                tax_calculate = tax_obj.compute_all(cr, uid, line.tax_id, line.price_unit, line.product_uom_qty, line.product_id, repair.partner_id)
+                for c in tax_calculate['taxes']:
+                    val += c['amount']
             res[repair.id] = cur_obj.round(cr, uid, cur, val)
         return res
 
@@ -262,32 +261,31 @@ class mrp_repair(osv.osv):
                 self.write(cr, uid, repair.id, {'invoiced': True, 'invoice_id': inv_id})
 
                 for operation in repair.operations:
-                    if operation.to_invoice == True:
-                        if group:
-                            name = repair.name + '-' + operation.name
-                        else:
-                            name = operation.name
+                    if group:
+                        name = repair.name + '-' + operation.name
+                    else:
+                        name = operation.name
 
-                        if operation.product_id.property_account_income:
-                            account_id = operation.product_id.property_account_income.id
-                        elif operation.product_id.categ_id.property_account_income_categ:
-                            account_id = operation.product_id.categ_id.property_account_income_categ.id
-                        else:
-                            raise osv.except_osv(_('Error!'), _('No account defined for product "%s".') % operation.product_id.name )
+                    if operation.product_id.property_account_income:
+                        account_id = operation.product_id.property_account_income.id
+                    elif operation.product_id.categ_id.property_account_income_categ:
+                        account_id = operation.product_id.categ_id.property_account_income_categ.id
+                    else:
+                        raise osv.except_osv(_('Error!'), _('No account defined for product "%s".') % operation.product_id.name )
 
-                        invoice_line_id = inv_line_obj.create(cr, uid, {
-                            'invoice_id': inv_id,
-                            'name': name,
-                            'origin': repair.name,
-                            'account_id': account_id,
-                            'quantity': operation.product_uom_qty,
-                            'invoice_line_tax_id': [(6,0,[x.id for x in operation.tax_id])],
-                            'uos_id': operation.product_uom.id,
-                            'price_unit': operation.price_unit,
-                            'price_subtotal': operation.product_uom_qty*operation.price_unit,
-                            'product_id': operation.product_id and operation.product_id.id or False
-                        })
-                        repair_line_obj.write(cr, uid, [operation.id], {'invoiced': True, 'invoice_line_id': invoice_line_id})
+                    invoice_line_id = inv_line_obj.create(cr, uid, {
+                        'invoice_id': inv_id,
+                        'name': name,
+                        'origin': repair.name,
+                        'account_id': account_id,
+                        'quantity': operation.product_uom_qty,
+                        'invoice_line_tax_id': [(6,0,[x.id for x in operation.tax_id])],
+                        'uos_id': operation.product_uom.id,
+                        'price_unit': operation.price_unit,
+                        'price_subtotal': operation.product_uom_qty*operation.price_unit,
+                        'product_id': operation.product_id and operation.product_id.id or False
+                    })
+                    repair_line_obj.write(cr, uid, [operation.id], {'invoiced': True, 'invoice_line_id': invoice_line_id})
                 res[repair.id] = inv_id
         return res
 
@@ -442,7 +440,7 @@ class mrp_repair_line(osv.osv, ProductChangeMixin):
         res = {}
         cur_obj=self.pool.get('res.currency')
         for line in self.browse(cr, uid, ids, context=context):
-            res[line.id] = line.to_invoice and line.price_unit * line.product_uom_qty or 0
+            res[line.id] = line.price_unit * line.product_uom_qty or 0
             cur = line.repair_id.pricelist_id.currency_id
             res[line.id] = cur_obj.round(cr, uid, cur, res[line.id])
         return res
@@ -470,7 +468,6 @@ class mrp_repair_line(osv.osv, ProductChangeMixin):
     _columns = {
         'name' : fields.char('Description',size=64,required=True),
         'repair_id': fields.many2one('mrp.repair', 'Repair Order Reference',ondelete='cascade', select=True),
-        'to_invoice': fields.boolean('To Invoice'),
         'product_id': fields.many2one('product.product', 'Product', required=True),
         'invoiced': fields.boolean('Invoiced',readonly=True),
         'price_unit': fields.float('Unit Price', required=True, digits_compute= dp.get_precision('Product Price')),
@@ -495,7 +492,6 @@ class mrp_repair_line(osv.osv, ProductChangeMixin):
     _defaults = {
      'state': lambda *a: 'draft',
      'product_uom_qty': lambda *a: 1,
-     'to_invoice': lambda *a: True    
     }
 
 mrp_repair_line()
