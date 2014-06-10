@@ -138,8 +138,6 @@
         </field>
     </record>
 
-
-
     <record id="view_repair_order_form_filter" model="ir.ui.view">
           <field name="name">mrp.repair.select</field>
           <field name="model">mrp.repair</field>

@@ -3,8 +3,6 @@ access_mrp_repair_user,MRP Repair user,model_mrp_repair,stock.group_stock_user,1
 access_mrp_repair_manager,MRP Repair manager,model_mrp_repair,stock.group_stock_manager,1,1,1,1
 access_mrp_repair_line_user,MRP Repair Line user,model_mrp_repair_line,stock.group_stock_user,1,0,0,0
 access_mrp_repair_line_manager,MRP Repair Line manager,model_mrp_repair_line,stock.group_stock_manager,1,1,1,1
-access_mrp_repair_fee_user,MRP Repair Fee user,model_mrp_repair_fee,stock.group_stock_user,1,1,1,1
-access_mrp_repair_fee_manager,MRP Repair Fee manager,model_mrp_repair_fee,stock.group_stock_manager,1,0,0,0
 access_mrp_repair_user,MRP Repair user,model_mrp_repair,mrp.group_mrp_user,1,1,1,1
 access_mrp_repair_manager,MRP Repair manager,model_mrp_repair,mrp.group_mrp_manager,1,0,0,0
 access_product_pricelist_manager,product.pricelist manager,product.model_product_pricelist,mrp.group_mrp_manager,1,0,0,0
@@ -19,8 +17,6 @@ access_product_price_type_manager,product.price.type manager,product.model_produ
 access_product_price_type_user,product.price.type,product.model_product_price_type,mrp.group_mrp_user,1,1,1,1
 access_account_tax_user,account.tax,account.model_account_tax,mrp.group_mrp_user,1,1,1,1
 access_account_tax_manager,account.tax manager,account.model_account_tax,mrp.group_mrp_manager,1,0,0,0
-access_mrp_repair_fee_user_mrp,MRP Repair Fee user mrp,model_mrp_repair_fee,mrp.group_mrp_user,1,1,1,1
-access_mrp_repair_fee_mgr,MRP Repair Fee mgr,model_mrp_repair_fee,mrp.group_mrp_manager,1,0,0,0
 access_account_invoice_user,account.invoice,account.model_account_invoice,mrp.group_mrp_user,1,1,1,1
 access_account_invoice_manager,account.invoice manager,account.model_account_invoice,mrp.group_mrp_manager,1,0,0,0
 access_account_invoice_line_user,account.invoice.line,account.model_account_invoice_line,mrp.group_mrp_user,1,1,1,1
