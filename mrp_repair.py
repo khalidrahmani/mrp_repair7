@@ -11,16 +11,6 @@ class mrp_repair(osv.osv):
     _description = 'Repair Order'
 
     def _amount_untaxed(self, cr, uid, ids, field_name, arg, context=None):
-        """ Calculates untaxed amount.
-        @param self: The object pointer
-        @param cr: The current row, from the database cursor,
-        @param uid: The current user ID for security checks
-        @param ids: List of selected IDs
-        @param field_name: Name of field.
-        @param arg: Argument
-        @param context: A standard dictionary for contextual values
-        @return: Dictionary of values.
-        """
         res = {}
         cur_obj = self.pool.get('res.currency')
 
@@ -33,20 +23,14 @@ class mrp_repair(osv.osv):
         return res
 
     def _amount_tax(self, cr, uid, ids, field_name, arg, context=None):
-        """ Calculates taxed amount.
-        @param field_name: Name of field.
-        @param arg: Argument
-        @return: Dictionary of values.
-        """
         res = {}
-        #return {}.fromkeys(ids, 0)
+        
         cur_obj = self.pool.get('res.currency')
         tax_obj = self.pool.get('account.tax')
         for repair in self.browse(cr, uid, ids, context=context):
             val = 0.0
             cur = repair.pricelist_id.currency_id
-            for line in repair.operations:
-                #manage prices with tax included use compute_all instead of compute
+            for line in repair.operations:                
                 if line.to_invoice:
                     tax_calculate = tax_obj.compute_all(cr, uid, line.tax_id, line.price_unit, line.product_uom_qty, line.product_id, repair.partner_id)
                     for c in tax_calculate['taxes']:
@@ -55,11 +39,6 @@ class mrp_repair(osv.osv):
         return res
 
     def _amount_total(self, cr, uid, ids, field_name, arg, context=None):
-        """ Calculates total amount.
-        @param field_name: Name of field.
-        @param arg: Argument
-        @return: Dictionary of values.
-        """
         res = {}
         untax = self._amount_untaxed(cr, uid, ids, field_name, arg, context=context)
         tax = self._amount_tax(cr, uid, ids, field_name, arg, context=context)
