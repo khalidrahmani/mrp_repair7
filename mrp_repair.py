@@ -1,24 +1,3 @@
-# -*- coding: utf-8 -*-
-##############################################################################
-#
-#    OpenERP, Open Source Management Solution
-#    Copyright (C) 2004-2010 Tiny SPRL (<http://tiny.be>).
-#
-#    This program is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU Affero General Public License as
-#    published by the Free Software Foundation, either version 3 of the
-#    License, or (at your option) any later version.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU Affero General Public License for more details.
-#
-#    You should have received a copy of the GNU Affero General Public License
-#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-##############################################################################
-
 from openerp.osv import fields,osv
 from openerp import netsvc
 from datetime import datetime
@@ -146,7 +125,6 @@ class mrp_repair(osv.osv):
         'internal_notes': fields.text('Internal Notes'),
         'quotation_notes': fields.text('Quotation Notes'),
         'company_id': fields.many2one('res.company', 'Company'),
-        'deliver_bool': fields.boolean('Deliver', help="Check this box if you want to manage the delivery once the product is repaired and create a picking with selected product. Note that you can select the locations in the Info tab, if you have the extended view.", states={'confirmed':[('readonly',True)]}),
         'invoiced': fields.boolean('Invoiced', readonly=True),
         'repaired': fields.boolean('Repaired', readonly=True),
         'amount_untaxed': fields.function(_amount_untaxed, string='Untaxed Amount',
@@ -168,7 +146,6 @@ class mrp_repair(osv.osv):
 
     _defaults = {
         'state': lambda *a: 'draft',
-        'deliver_bool': lambda *a: True,
         'name': lambda obj, cr, uid, context: obj.pool.get('ir.sequence').get(cr, uid, 'mrp.repair'),
         'invoice_method': lambda *a: 'after_repair',
         'company_id': lambda self, cr, uid, context: self.pool.get('res.company')._company_default_get(cr, uid, 'mrp.repair', context=context),
@@ -486,35 +463,7 @@ class mrp_repair(osv.osv):
                 })
                 move_obj.action_done(cr, uid, [move_id], context=context)
                 repair_line_obj.write(cr, uid, [move.id], {'move_id': move_id, 'state': 'done'}, context=context)
-            if repair.deliver_bool:
-                pick_name = seq_obj.get(cr, uid, 'stock.picking.out')
-                picking = pick_obj.create(cr, uid, {
-                    'name': pick_name,
-                    'origin': repair.name,
-                    'state': 'draft',
-                    'move_type': 'one',
-                    'partner_id': repair.address_id and repair.address_id.id or False,
-                    'note': repair.internal_notes,
-                    'invoice_state': 'none',
-                    'type': 'out',
-                })
-                move_id = move_obj.create(cr, uid, {
-                    'name': repair.name,
-                    'picking_id': picking,
-                    'product_id': repair.product_id.id,
-                    'product_uom': repair.product_id.uom_id.id,
-                    'prodlot_id': repair.prodlot_id and repair.prodlot_id.id or False,
-                    'partner_id': repair.address_id and repair.address_id.id or False,
-                    'location_id': repair.location_id.id,
-                    'location_dest_id': repair.location_dest_id.id,
-                    'tracking_id': False,
-                    'state': 'assigned',
-                })
-                wf_service.trg_validate(uid, 'stock.picking', picking, 'button_confirm', cr)
-                self.write(cr, uid, [repair.id], {'state': 'done', 'picking_id': picking})
-                res[repair.id] = picking
-            else:
-                self.write(cr, uid, [repair.id], {'state': 'done'})
+            self.write(cr, uid, [repair.id], {'state': 'done'})
         return res
 
 
