@@ -344,8 +344,20 @@ class mrp_repair(osv.osv):
         seq_obj = self.pool.get('ir.sequence')
         pick_obj = self.pool.get('stock.picking')
         for repair in self.browse(cr, uid, ids, context=context):
+            pick_name = seq_obj.get(cr, uid, 'stock.picking.out')
+            picking = pick_obj.create(cr, uid, {
+                'name': pick_name,
+                'origin': repair.name,
+                'state': 'draft',
+                'move_type': 'one',
+                'partner_id': repair.address_id and repair.address_id.id or False,
+                'note': repair.internal_notes,
+                'invoice_state': 'none',
+                'type': 'out',
+            })
             for move in repair.operations:
                 move_id = move_obj.create(cr, uid, {
+                    'picking_id': picking,
                     'name': move.name,
                     'product_id': move.product_id.id,
                     'product_qty': move.product_uom_qty,
@@ -356,7 +368,6 @@ class mrp_repair(osv.osv):
                     'tracking_id': False,
                     'state': 'assigned',
                 })
-                move_obj.action_done(cr, uid, [move_id], context=context)
                 repair_line_obj.write(cr, uid, [move.id], {'move_id': move_id, 'state': 'done'}, context=context)
             self.write(cr, uid, [repair.id], {'state': 'done'})
         return res
@@ -436,7 +447,7 @@ class mrp_repair_line(osv.osv, ProductChangeMixin):
             res[line.id] = cur_obj.round(cr, uid, cur, res[line.id])
         return res
 
-    def _get_default_location(self, cr, uid, ids, field_name, arg, context=None):   
+    def _get_location_id(self, cr, uid, ids, field_name, arg, context=None):   
         res = {}     
         args = []
         warehouse_obj = self.pool.get('stock.warehouse')
@@ -444,6 +455,16 @@ class mrp_repair_line(osv.osv, ProductChangeMixin):
             warehouse_ids = warehouse_obj.search(cr, uid, args, context=context)
             default_location = warehouse_obj.browse(cr, uid, warehouse_ids[0], context=context).lot_stock_id.id
             res[data.id] = default_location
+        return res
+
+    def _get_location_dest_id(self, cr, uid, ids, field_name, arg, context=None):   
+        res = {}     
+        args = []
+        location_obj = self.pool.get('stock.location')
+        for data in self.browse(cr, uid, ids, context=context):
+            location_id = location_obj.search(cr, uid, [('usage','=','production')], context=context)
+            location_id = location_id and location_id[0] or False
+            res[data.id] = location_id
         return res
 
     _columns = {
@@ -458,8 +479,8 @@ class mrp_repair_line(osv.osv, ProductChangeMixin):
         'product_uom_qty': fields.float('Quantity', digits_compute= dp.get_precision('Product Unit of Measure'), required=True),
         'product_uom': fields.many2one('product.uom', 'Product Unit of Measure', required=True),
         'invoice_line_id': fields.many2one('account.invoice.line', 'Invoice Line', readonly=True),
-        'location_id': fields.function(_get_default_location, type="many2one", relation="stock.location"),         
-        'location_dest_id': fields.function(_get_default_location, type="many2one", relation="stock.location"),
+        'location_id': fields.function(_get_location_id, type="many2one", relation="stock.location"),         
+        'location_dest_id': fields.function(_get_location_dest_id, type="many2one", relation="stock.location"),
         'move_id': fields.many2one('stock.move', 'Inventory Move', readonly=True),
         'state': fields.selection([
                     ('draft','Draft'),
@@ -480,3 +501,4 @@ class mrp_repair_line(osv.osv, ProductChangeMixin):
 mrp_repair_line()
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
+   
