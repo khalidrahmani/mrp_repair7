@@ -65,7 +65,6 @@ class mrp_repair(osv.osv):
 
     _columns = {
         'name': fields.char('Repair Reference',size=24, required=True, states={'confirmed':[('readonly',True)]}),
-        #'product_id': fields.many2one('product.product', string='Product to Repair', required=True, readonly=True, states={'draft':[('readonly',False)]}),
         'partner_id' : fields.many2one('res.partner', 'Partner', select=True, help='Choose partner for whom the order will be invoiced and delivered.', states={'confirmed':[('readonly',True)]}),
         'address_id': fields.many2one('res.partner', 'Delivery Address', domain="[('parent_id','=',partner_id)]", states={'confirmed':[('readonly',True)]}),
         'default_address_id': fields.function(_get_default_address, type="many2one", relation="res.partner"),
@@ -140,18 +139,6 @@ class mrp_repair(osv.osv):
             'name': self.pool.get('ir.sequence').get(cr, uid, 'mrp.repair'),
         })
         return super(mrp_repair, self).copy(cr, uid, id, default, context)
-
-    def onchange_product_id(self, cr, uid, ids, product_id=None):
-        """ On change of product sets some values.
-        @param product_id: Changed product
-        @return: Dictionary of values.
-        """
-        return {'value': {
-                    #'move_id': False,
-                    'location_id':  False,
-                    'location_dest_id': False,
-                }
-        }
 
     def button_dummy(self, cr, uid, ids, context=None):
         return True
