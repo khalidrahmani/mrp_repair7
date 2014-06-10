@@ -87,7 +87,7 @@ class mrp_repair(osv.osv):
             \n* The \'Cancelled\' status is used when user cancel repair order.'),
         'location_id': fields.many2one('stock.location', 'Current Location', select=True, readonly=True, states={'draft':[('readonly',False)], 'confirmed':[('readonly',True)]}),
         'location_dest_id': fields.many2one('stock.location', 'Delivery Location', readonly=True, states={'draft':[('readonly',False)], 'confirmed':[('readonly',True)]}),
-        'move_id': fields.many2one('stock.move', 'Move',required=True, domain="[('product_id','=',product_id)]", readonly=True, states={'draft':[('readonly',False)]}),
+        #'move_id': fields.many2one('stock.move', 'Move',required=True, domain="[('product_id','=',product_id)]", readonly=True, states={'draft':[('readonly',False)]}),
         'operations' : fields.one2many('mrp.repair.line', 'repair_id', 'Operation Lines', readonly=True, states={'draft':[('readonly',False)]}),
         'pricelist_id': fields.many2one('product.pricelist', 'Pricelist', help='Pricelist of the selected partner.'),
         'partner_invoice_id':fields.many2one('res.partner', 'Invoicing Address'),
@@ -148,36 +148,11 @@ class mrp_repair(osv.osv):
         @return: Dictionary of values.
         """
         return {'value': {
-                    'move_id': False,
+                    #'move_id': False,
                     'location_id':  False,
                     'location_dest_id': False,
                 }
         }
-
-    def onchange_move_id(self, cr, uid, ids, prod_id=False, move_id=False):
-        """ On change of move id sets values of guarantee limit, source location,
-        destination location, partner and partner address.
-        @param prod_id: Id of product in current record.
-        @param move_id: Changed move.
-        @return: Dictionary of values.
-        """
-        data = {}
-        data['value'] = {'location_id': False, 'partner_id': False}
-        if not prod_id:
-            return data
-        if move_id:
-            move =  self.pool.get('stock.move').browse(cr, uid, move_id)
-            product = self.pool.get('product.product').browse(cr, uid, prod_id)
-            limit = datetime.strptime(move.date_expected, '%Y-%m-%d %H:%M:%S') + relativedelta(months=int(product.warranty))
-            data['value']['location_id'] = move.location_dest_id.id
-            data['value']['location_dest_id'] = move.location_dest_id.id
-            if move.partner_id:
-                data['value']['partner_id'] = move.partner_id.id
-            else:
-                data['value']['partner_id'] = False
-            d = self.onchange_partner_id(cr, uid, ids, data['value']['partner_id'], data['value']['partner_id'])
-            data['value'].update(d['value'])
-        return data
 
     def button_dummy(self, cr, uid, ids, context=None):
         return True
