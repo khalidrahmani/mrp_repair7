@@ -189,13 +189,13 @@
         <td>
           <para style="P5">Shipping address :</para>
           <para style="P3">[[ o.partner_id.name ]]</para>
-          <para style="P3">[[ o.address_id and display_address(o.address_id) ]] </para>
+          <para style="P3">[[ o.partner_id.name ]]</para>
           <para style="P3">
             <font color="white"> </font>
           </para>
           <para style="P13">Invoice address :</para>
-          <para style="P3">[[ o.partner_id and o.partner_id.property_payment_term.name ]]</para>
-          <para style="P3">[[ o.partner_invoice_id and display_address(o.partner_invoice_id) ]] </para>
+          <para style="P3">[[ o.partner_id.name ]]</para>
+          <para style="P3">[[ o.partner_id.name ]]</para>
         </td>
         <td>
           <para style="P12">
@@ -204,7 +204,7 @@
         </td>
         <td>
           <para style="P3">[[ o.partner_id.name or removeParentNode('para') ]]</para>
-          <para style="P3">[[ o.default_address_id and display_address(o.default_address_id) ]] </para>
+          <para style="P3">[[ o.partner_id.name ]]</para>
           <para style="P3">
             <font color="white"> </font>
           </para>
@@ -256,10 +256,10 @@
           <para style="P16">[[ o.product_id.name or '' ]]</para>
         </td>
         <td>
-          <para style="P16">[[ o.prodlot_id.name or ' ' ]]</para>
+          <para style="P16">[[ formatLang(time.strftime('%Y-%m-%d'),date = True)]]</para>
         </td>
         <td>
-          <para style="P16">[[ formatLang(o.guarantee_limit,date = True) ]]</para>
+          <para style="P16">[[ formatLang(time.strftime('%Y-%m-%d'),date = True)]]</para>
         </td>
         <td>
           <para style="P16">[[ formatLang(time.strftime('%Y-%m-%d'),date = True)]] </para>
@@ -295,11 +295,11 @@
     <section>
       <para style="P30"><font color="white">[[ repeatIn(o.operations,'line') ]] </font></para>
       <para style="P29">[[ (not line) and removeParentNode('section') ]]</para>
-      <blockTable colWidths="254.0,100.0,60.0,60.0,60.0" style="Table5">[[ (line.to_invoice==True) or removeParentNode('blockTable') ]]
+      <blockTable colWidths="254.0,100.0,60.0,60.0,60.0" style="Table5">[[ (True==True) or removeParentNode('blockTable') ]]
         <tr>
           <td>
-            <para style="terp_default_9"><font face="Helvetica-Oblique" size="8.0">(Add)  [[ ((line.type == 'add') or removeParentNode('para')) and '' ]]</font><font> [[ line.name ]]</font></para>
-          	<para style="terp_default_9"><font face="Helvetica-Oblique" size="8.0">(Remove)  [[ ((line.type == 'remove') or removeParentNode('para')) and '' ]]</font><font> [[ line.name ]]</font></para>
+            <para style="terp_default_9"><font face="Helvetica-Oblique" size="8.0">(Add)  [[ (('add' == 'add') or removeParentNode('para')) and '' ]]</font><font> [[ line.name ]]</font></para>
+          	<para style="terp_default_9"><font face="Helvetica-Oblique" size="8.0">(Remove)  [[ (('add' == 'remove') or removeParentNode('para')) and '' ]]</font><font> [[ line.name ]]</font></para>
           </td>
           <td>
             <para style="terp_default_Centre_9">[[ ','.join(map( lambda x: x.name, line.tax_id)) ]]</para>
@@ -317,12 +317,12 @@
         </tr>
       </blockTable>
     </section>
-    <para style="P29">Fees Line(s) [[ (o.fees_lines ==[] and  removeParentNode('para') )  ]]</para>
+    <para style="P29">Fees Line(s) [[ (True ==True and  removeParentNode('para') )  ]]</para>
     <section>
-    <para style="P30"><font color="white">[[ repeatIn(o.fees_lines,'fees') ]]</font></para>
+    <para style="P30"><font color="white">[[ repeatIn(o.operations,'fees') ]]</font></para>
     <para style="P29">[[ (not fees) and removeParentNode('section') ]]</para>
 
-    <blockTable colWidths="254.0,100.0,60.0,60.0,60.0" style="Table6">[[ (fees.to_invoice==True) or removeParentNode('blockTable') ]]
+    <blockTable colWidths="254.0,100.0,60.0,60.0,60.0" style="Table6">[[ (False==True) or removeParentNode('blockTable') ]]
       <tr>
         <td>
           <para style="terp_default_9"><font>[[ fees.name ]]</font></para>

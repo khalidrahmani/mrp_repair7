@@ -68,7 +68,7 @@
                                             </div>
                                             <field name="price_unit"/>
                                             <field name="price_subtotal"/>
-                                            <field name="tax_id" widget="many2many_tags" domain="[('parent_id','=',False),('type_tax_use','&lt;&gt;','purchase')]"/>
+                                            <field name="tax_id" widget="many2many_tags" domain="[('parent_id','=',False),('type_tax_use','&lt;&gt;','purchase')]" />
                                             <field name="invoiced"/>
                                             <field name="location_id" groups="stock.group_locations"/>
                                             <field name="location_dest_id" groups="stock.group_locations"/>
@@ -89,7 +89,7 @@
                                 <field name="product_uom_qty" string="Quantity"/>
                                 <field name="product_uom" string="Unit of Measure" groups="product.group_uom"/>
                                 <field name="price_unit"/>
-                                <field name="tax_id" widget="many2many_tags"/>
+                                <field name="tax_id" widget="many2many_tags" invisible="1"/>
                                 <field name="price_subtotal"/>
                             </tree>
                         </field>
