@@ -95,6 +95,7 @@
                         </field>
                         <group class="oe_subtotal_footer oe_right">
                             <field name="amount_untaxed" sum="Untaxed amount"/>
+                            
                             <field name="amount_tax"/>
                             <div class="oe_subtotal_footer_separator oe_inline">
                                 <label for="amount_total" />
