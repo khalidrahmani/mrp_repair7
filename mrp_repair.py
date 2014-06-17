@@ -32,7 +32,7 @@ class mrp_repair(osv.osv):
             val = 0.0
             cur = repair.pricelist_id.currency_id
             for line in repair.operations:                
-                tax_calculate = tax_obj.compute_all(cr, uid, line.tax_id, line.price_unit, line.product_uom_qty, line.product_id, repair.partner_id)
+                tax_calculate = tax_obj.compute_all(cr, uid, line.tax_id, line.price_unit*(1-(line.discount/100)), line.product_uom_qty, line.product_id, repair.partner_id)
                 for c in tax_calculate['taxes']:
                     val += c['amount']
             res[repair.id] = cur_obj.round(cr, uid, cur, val)
@@ -63,6 +63,9 @@ class mrp_repair(osv.osv):
         return self.pool['mrp.repair'].search(
             cr, uid, [('operations', 'in', ids)], context=context)
 
+    def unlink(self, cr, uid, ids, context=None):
+        raise osv.except_osv(_('Invalid action !'), _('Vous n\'avez pas le droit de supprimer cet Ordre De Reparation!'))  
+
     _columns = {
         'name': fields.char('Repair Reference',size=24, required=True, states={'confirmed':[('readonly',True)]}),
         '_create_date' : fields.datetime('Create Date'),
@@ -85,8 +88,6 @@ class mrp_repair(osv.osv):
             \n* The \'To be Invoiced\' status is used to generate the invoice before or after repairing done. \
             \n* The \'Done\' status is set when repairing is completed.\
             \n* The \'Cancelled\' status is used when user cancel repair order.'),
-        'location_id': fields.many2one('stock.location', 'Current Location', select=True, readonly=True, states={'draft':[('readonly',False)], 'confirmed':[('readonly',True)]}),
-        'location_dest_id': fields.many2one('stock.location', 'Delivery Location', readonly=True, states={'draft':[('readonly',False)], 'confirmed':[('readonly',True)]}),
         'operations' : fields.one2many('mrp.repair.line', 'repair_id', 'Operation Lines', readonly=True, states={'draft':[('readonly',False)]}),
         'pricelist_id': fields.many2one('product.pricelist', 'Pricelist', help='Pricelist of the selected partner.'),
         'partner_invoice_id':fields.many2one('res.partner', 'Invoicing Address'),
@@ -97,8 +98,7 @@ class mrp_repair(osv.osv):
            ], "Invoice Method",
             select=True, required=True, states={'draft':[('readonly',False)]}, readonly=True, help='Selecting \'Before Repair\' or \'After Repair\' will allow you to generate invoice before or after the repair is done respectively. \'No invoice\' means you don\'t want to generate invoice for this repair order.'),
         'invoice_id': fields.many2one('account.invoice', 'Invoice', readonly=True),        
-        'internal_notes': fields.text('Internal Notes'),
-        'quotation_notes': fields.text('Quotation Notes'),
+        'symptomes': fields.text('Symptomes'),
         'company_id': fields.many2one('res.company', 'Company'),
         'invoiced': fields.boolean('Invoiced', readonly=True),
         'repaired': fields.boolean('Repaired', readonly=True),
@@ -208,7 +208,7 @@ class mrp_repair(osv.osv):
                 continue
             if not (repair.partner_id.id and repair.partner_invoice_id.id):
                 raise osv.except_osv(_('No partner!'),_('You have to select a Partner Invoice Address in the repair form!'))
-            comment = repair.quotation_notes
+            comment = repair.symptomes
             if (repair.invoice_method != 'none'):
                 if group and repair.partner_invoice_id.id in invoices_group:
                     inv_id = invoices_group[repair.partner_invoice_id.id]
@@ -230,7 +230,7 @@ class mrp_repair(osv.osv):
                         'account_id': account_id,
                         'partner_id': repair.partner_id.id,
                         'currency_id': repair.pricelist_id.currency_id.id,
-                        'comment': repair.quotation_notes,
+                        'comment': repair.symptomes,
                         'fiscal_position': repair.partner_id.property_account_position.id
                     }
                     inv_id = inv_obj.create(cr, uid, inv)
@@ -258,8 +258,8 @@ class mrp_repair(osv.osv):
                         'quantity': operation.product_uom_qty,
                         'invoice_line_tax_id': [(6,0,[x.id for x in operation.tax_id])],
                         'uos_id': operation.product_uom.id,
-                        'price_unit': operation.price_unit,
-                        'price_subtotal': operation.product_uom_qty*operation.price_unit,
+                        'price_unit': operation.price_unit*((100.0-operation.discount)/100.0),
+                        'price_subtotal': operation.product_uom_qty*operation.price_unit*((100.0-operation.discount)/100.0),
                         'product_id': operation.product_id and operation.product_id.id or False
                     })
                     repair_line_obj.write(cr, uid, [operation.id], {'invoiced': True, 'invoice_line_id': invoice_line_id})
@@ -312,8 +312,8 @@ class mrp_repair(osv.osv):
                 'origin': repair.name,
                 'state': 'draft',
                 'move_type': 'one',
-                'partner_id': False, #repair.address_id and repair.address_id.id or False,
-                'note': repair.internal_notes,
+                'partner_id': False, 
+                'note': repair.symptomes,
                 'invoice_state': 'none',
                 'type': 'out',
             })
@@ -324,7 +324,7 @@ class mrp_repair(osv.osv):
                     'product_id': move.product_id.id,
                     'product_qty': move.product_uom_qty,
                     'product_uom': move.product_uom.id,
-                    'partner_id': False, #repair.address_id and repair.address_id.id or False,
+                    'partner_id': False,
                     'location_id': move.location_id.id,
                     'location_dest_id': move.location_dest_id.id,
                     'tracking_id': False,
@@ -390,7 +390,7 @@ class mrp_repair_line(osv.osv, ProductChangeMixin):
         res = {}
         cur_obj=self.pool.get('res.currency')
         for line in self.browse(cr, uid, ids, context=context):
-            res[line.id] = line.price_unit * line.product_uom_qty or 0
+            res[line.id] = line.price_unit * line.product_uom_qty * (1 - (line.discount or 0.0) /100.0) or 0
             cur = line.repair_id.pricelist_id.currency_id
             res[line.id] = cur_obj.round(cr, uid, cur, res[line.id])
         return res
@@ -417,7 +417,7 @@ class mrp_repair_line(osv.osv, ProductChangeMixin):
 
     _columns = {
         'name' : fields.char('Description',size=64,required=True),
-        'discount': fields.integer('Discount (%)'),
+        'discount': fields.float('Discount (%)', digits=(16,2)),
         'repair_id': fields.many2one('mrp.repair', 'Repair Order Reference',ondelete='cascade', select=True),
         'product_id': fields.many2one('product.product', 'Product', required=True),
         'invoiced': fields.boolean('Invoiced',readonly=True),
@@ -427,7 +427,7 @@ class mrp_repair_line(osv.osv, ProductChangeMixin):
         'product_uom_qty': fields.float('Quantity', digits_compute= dp.get_precision('Product Unit of Measure'), required=True),
         'product_uom': fields.many2one('product.uom', 'Product Unit of Measure', required=True),
         'invoice_line_id': fields.many2one('account.invoice.line', 'Invoice Line', readonly=True),
-        'location_id': fields.function(_get_location_id, type="many2one", relation="stock.location"),         
+        'location_id': fields.function(_get_location_id, type="many2one", relation="stock.location"),
         'location_dest_id': fields.function(_get_location_dest_id, type="many2one", relation="stock.location"),
         'move_id': fields.many2one('stock.move', 'Inventory Move', readonly=True),
         'state': fields.selection([
