@@ -19,6 +19,7 @@
 #
 ##############################################################################
 
+import product
 import mrp_repair
 import wizard
 import report

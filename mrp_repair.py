@@ -4,7 +4,9 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from openerp.tools.translate import _
 import openerp.addons.decimal_precision as dp
-#OK
+
+
+
 class mrp_repair(osv.osv):
     _name = 'mrp.repair'
     _description = 'Repair Order'
@@ -65,7 +67,6 @@ class mrp_repair(osv.osv):
         'name': fields.char('Repair Reference',size=24, required=True, states={'confirmed':[('readonly',True)]}),
         '_create_date' : fields.datetime('Create Date'),
         'partner_id' : fields.many2one('res.partner', 'Partner', select=True, help='Choose partner for whom the order will be invoiced and delivered.', states={'confirmed':[('readonly',True)]}),
-        'address_id': fields.many2one('res.partner', 'Delivery Address', domain="[('parent_id','=',partner_id)]", states={'confirmed':[('readonly',True)]}),
         'default_address_id': fields.function(_get_default_address, type="many2one", relation="res.partner"),
         'state': fields.selection([
             ('draft','Quotation'),
@@ -75,7 +76,8 @@ class mrp_repair(osv.osv):
             ('ready','Ready to Repair'),
             ('2binvoiced','To be Invoiced'),
             ('invoice_except','Invoice Exception'),
-            ('done','Repaired')
+            ('done','Repaired'),
+            ('avoir','avoir')
             ], 'Status', readonly=True, track_visibility='onchange',
             help=' * The \'Draft\' status is used when a user is encoding a new and unconfirmed repair order. \
             \n* The \'Confirmed\' status is used when a user confirms the repair order. \
@@ -141,12 +143,11 @@ class mrp_repair(osv.osv):
     def button_dummy(self, cr, uid, ids, context=None):
         return True
 
-    def onchange_partner_id(self, cr, uid, ids, part, address_id):
+    def onchange_partner_id(self, cr, uid, ids, part):
         part_obj = self.pool.get('res.partner')
         pricelist_obj = self.pool.get('product.pricelist')
         if not part:
             return {'value': {
-                        'address_id': False,
                         'partner_invoice_id': False,
                         'pricelist_id': pricelist_obj.search(cr, uid, [('type','=','sale')])[0]
                     }
@@ -155,7 +156,6 @@ class mrp_repair(osv.osv):
         partner = part_obj.browse(cr, uid, part)
         pricelist = partner.property_product_pricelist and partner.property_product_pricelist.id or False
         return {'value': {
-                    'address_id': addr['delivery'] or addr['default'],
                     'partner_invoice_id': addr['invoice'],
                     'pricelist_id': pricelist
                 }
@@ -312,7 +312,7 @@ class mrp_repair(osv.osv):
                 'origin': repair.name,
                 'state': 'draft',
                 'move_type': 'one',
-                'partner_id': repair.address_id and repair.address_id.id or False,
+                'partner_id': False, #repair.address_id and repair.address_id.id or False,
                 'note': repair.internal_notes,
                 'invoice_state': 'none',
                 'type': 'out',
@@ -324,7 +324,7 @@ class mrp_repair(osv.osv):
                     'product_id': move.product_id.id,
                     'product_qty': move.product_uom_qty,
                     'product_uom': move.product_uom.id,
-                    'partner_id': repair.address_id and repair.address_id.id or False,
+                    'partner_id': False, #repair.address_id and repair.address_id.id or False,
                     'location_id': move.location_id.id,
                     'location_dest_id': move.location_dest_id.id,
                     'tracking_id': False,

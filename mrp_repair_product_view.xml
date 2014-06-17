@@ -1,0 +1,23 @@
+<?xml version="1.0" ?>
+<openerp>
+	<data>
+		<record model="ir.ui.view" id="view_product_mrp_repair_form">
+			<field name="name">product.normal.form</field>
+			<field name="model">product.product</field>
+			<field name="inherit_id" ref="product.product_normal_form_view" />
+			<field name="type">form</field>
+			<field name="arch" type="xml">				
+				<page string="Information" position="after">					
+					<page string="Similar Products">
+                        <field name="similar_products">
+                            <tree string="Similar Products" editable="bottom">
+                                <field name="product_id"/>
+                            </tree>
+                        </field>
+                    </page>
+				</page>
+			</field>
+		</record>
+	</data>
+</openerp>
+

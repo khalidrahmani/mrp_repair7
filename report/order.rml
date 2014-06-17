@@ -226,8 +226,8 @@
     <para style="P10">
       <font color="white"> </font>
     </para>
-    <para style="P8">[[ o.state&lt;&gt;'draft' and removeParentNode('para') ]]Repair Quotation <font face="Helvetica">N° : [[ o.name ]]</font></para>
-    <para style="P9">[[ o.state=='draft' and removeParentNode('para') ]]Repair Order N° : [[ o.name ]]</para>
+    <para style="P8">[[ o.state != 'draft' and removeParentNode('para') ]]Repair Quotation <font face="Helvetica">N° : [[ o.name ]]</font></para>
+    <para style="P9">[[ o.state == 'draft' and removeParentNode('para') ]]Repair Order N° : [[ o.name ]]</para>
     <para style="P11">
       <font color="white"> </font>
     </para>

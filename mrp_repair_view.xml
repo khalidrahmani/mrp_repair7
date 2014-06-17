@@ -10,9 +10,7 @@
                 <field name="name" />
                 <field name="_create_date" />
                 <field name="partner_id"/>
-                <field name="address_id"/>
                 <field name="location_id" groups="stock.group_locations"/>
-                <field name="location_dest_id" groups="stock.group_locations"/>
                 <field name="company_id" groups="base.group_multi_company" invisible="1"/>
                 <field name="state"/>
             </tree>
@@ -38,13 +36,12 @@
                </header>
                <sheet string="Repairs order">
                     <h1>
-                        Repair Order <field name="name" class="oe_inline"/>
+                        Ordre de Réparation <field name="name" class="oe_inline"/>
                     </h1>
                     <group>
                         <group>
-                            <field name="partner_id" on_change="onchange_partner_id(partner_id,address_id)" attrs="{'required':True}"/>
+                            <field name="partner_id" on_change="onchange_partner_id(partner_id)" attrs="{'required':True}"/>
                             <field name="_create_date" />
-                            <field name="address_id" groups="sale.group_delivery_invoice_address"/>
                             <field name="location_id" attrs="{'required':True}" groups="stock.group_locations"/>
                         </group>
                         <group>
