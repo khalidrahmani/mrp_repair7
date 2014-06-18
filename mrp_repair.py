@@ -470,6 +470,24 @@ class mrp_repair_line(osv.osv, ProductChangeMixin):
      'product_uom_qty': lambda *a: 1,
     }
 
+    def _quantity_exists_in_warehouse(self, cr, uid, ids, context=None):
+        repair_line = self.browse(cr, uid, ids[0], context=context)
+        if repair_line.product_id.type  in ('product', 'consu') and repair_line.product_uom_qty > repair_line.product_id.virtual_available and repair_line.state !="draft":
+            similar_products = repair_line.product_id.similar_products
+            x = ""
+            for product in similar_products:
+                if repair_line.product_uom_qty <= product.product_id.virtual_available:
+                    x += product.product_id.default_code+","  
+            if x != ""  :      
+                raise osv.except_osv(_('Warning !'), _('La quantite du produit "%s" n\'existe pas en stock. Vous pouvez utiliser les references suivantes : "%s"') % (repair_line.product_id.default_code, x))
+            else :      
+                raise osv.except_osv(_('Warning !'), _('La quantite du produit "%s" n\'existe pas en stock.') % (repair_line.product_id.default_code))            
+            return False
+        return True
+
+    _constraints = [
+       (_quantity_exists_in_warehouse,'Error: The quantity does not exist in warehouse.', ['product_uom_qty']),
+    ]
 mrp_repair_line()
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

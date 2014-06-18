@@ -43,7 +43,7 @@
                     </h1>
                     <group>
                         <group>
-                            <field name="_create_date" />
+                            <field name="_create_date" string="Date"/>
                             <field name="partner_id" on_change="onchange_partner_id(partner_id)" attrs="{'required':True}"/>    
                             <field name="marque"/>       
                             <field name="modele"/>  
