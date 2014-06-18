@@ -5,7 +5,35 @@ from dateutil.relativedelta import relativedelta
 from openerp.tools.translate import _
 import openerp.addons.decimal_precision as dp
 
+class car_marque(osv.osv):
+    
+    _name = 'car.marque'
+    _description = "Marque de voitures"
+    _order = "name"
+    _columns = {
+        'name': fields.char("Marque", size=64),
+    }
+    
+    _sql_constraints = [
+        ('uniq_name', 'unique(name)', "The Name must be unique"),
+    ]
+    
+car_marque()
 
+class car_modele(osv.osv):
+    
+    _name = 'car.modele'
+    _description = "Modele de voitures"
+    _order = "name"
+    _columns = {
+        'name': fields.char("Modele", size=64),
+        'marque_id': fields.many2one('car.marque', 'Marque'),
+    }
+    _sql_constraints = [
+        ('uniq_name', 'unique(name)', "The Name must be unique"),
+    ]
+        
+car_modele()
 
 class mrp_repair(osv.osv):
     _name = 'mrp.repair'
@@ -58,8 +86,15 @@ class mrp_repair(osv.osv):
 
     _columns = {
         'name': fields.char('Repair Reference',size=24, required=True, states={'confirmed':[('readonly',True)]}),
-        '_create_date' : fields.datetime('Create Date'),
+        '_create_date' : fields.datetime('Date'),
         'partner_id' : fields.many2one('res.partner', 'Partner', select=True, help='Choose partner for whom the order will be invoiced and delivered.', states={'confirmed':[('readonly',True)]}),
+        'marque': fields.many2one('car.marque','Marque', required=True),
+        'modele': fields.many2one('car.modele','Modele',domain="[('marque_id','=',marque)]", required=True),
+        'matricule': fields.char('Matricule',size=24),
+        'chassis': fields.char('Chassis',size=24, required=True),
+        'telephone': fields.char('Telephone',size=24),        
+        'kilometrage': fields.char('Kilometrage',size=24),
+        'mec': fields.date('Mise en circulation'),                
         'state': fields.selection([
             ('draft','Quotation'),
             ('cancel','Cancelled'),

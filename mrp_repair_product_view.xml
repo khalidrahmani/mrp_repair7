@@ -8,9 +8,9 @@
 			<field name="type">form</field>
 			<field name="arch" type="xml">				
 				<page string="Information" position="after">					
-					<page string="Similar Products">
+					<page string="Produits Similaires">
                         <field name="similar_products">
-                            <tree string="Similar Products" editable="bottom">
+                            <tree string="Produits Similaires" editable="bottom">
                                 <field name="product_id"/>
                             </tree>
                         </field>
