@@ -49,16 +49,6 @@ class mrp_repair(osv.osv):
             res[id] = cur_obj.round(cr, uid, cur, untax.get(id, 0.0) + tax.get(id, 0.0))
         return res
 
-    def _get_default_address(self, cr, uid, ids, field_name, arg, context=None):
-        res = {}
-        partner_obj = self.pool.get('res.partner')
-        for data in self.browse(cr, uid, ids, context=context):
-            adr_id = False
-            if data.partner_id:
-                adr_id = partner_obj.address_get(cr, uid, [data.partner_id.id], ['default'])['default']
-            res[data.id] = adr_id
-        return res
-
     def _get_lines(self, cr, uid, ids, context=None):
         return self.pool['mrp.repair'].search(
             cr, uid, [('operations', 'in', ids)], context=context)
@@ -70,7 +60,6 @@ class mrp_repair(osv.osv):
         'name': fields.char('Repair Reference',size=24, required=True, states={'confirmed':[('readonly',True)]}),
         '_create_date' : fields.datetime('Create Date'),
         'partner_id' : fields.many2one('res.partner', 'Partner', select=True, help='Choose partner for whom the order will be invoiced and delivered.', states={'confirmed':[('readonly',True)]}),
-        'default_address_id': fields.function(_get_default_address, type="many2one", relation="res.partner"),
         'state': fields.selection([
             ('draft','Quotation'),
             ('cancel','Cancelled'),
@@ -258,8 +247,9 @@ class mrp_repair(osv.osv):
                         'quantity': operation.product_uom_qty,
                         'invoice_line_tax_id': [(6,0,[x.id for x in operation.tax_id])],
                         'uos_id': operation.product_uom.id,
-                        'price_unit': operation.price_unit*((100.0-operation.discount)/100.0),
-                        'price_subtotal': operation.product_uom_qty*operation.price_unit*((100.0-operation.discount)/100.0),
+                        'price_unit': operation.price_unit,
+                        'price_subtotal': operation.product_uom_qty*operation.price_unit,
+                        'discount':operation.discount,
                         'product_id': operation.product_id and operation.product_id.id or False
                     })
                     repair_line_obj.write(cr, uid, [operation.id], {'invoiced': True, 'invoice_line_id': invoice_line_id})
