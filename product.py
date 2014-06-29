@@ -37,5 +37,11 @@ class product_product(osv.osv):
         'code_marque': fields.many2one('code.marque','Code Marque'),        
         'similar_products' : fields.one2many('similar.product.line', 'product_id_ref', 'Similar Products'),  
     }    
-                          
+    
+    _defaults = {
+        'property_account_income' : 726, 
+        'property_account_expense' : 469, 
+        'type' : 'product'   
+    }
+
 product_product()

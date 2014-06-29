@@ -85,7 +85,7 @@ class mrp_repair(osv.osv):
         raise osv.except_osv(_('Invalid action !'), _('Vous n\'avez pas le droit de supprimer cet Ordre De Reparation!'))  
 
     _columns = {
-        'name': fields.char('Repair Reference',size=24, required=True, states={'confirmed':[('readonly',True)]}),
+        'name': fields.char('Repair Reference',size=24, required=True, readonly=True),
         '_create_date' : fields.datetime('Date'),
         'partner_id' : fields.many2one('res.partner', 'Partner', select=True, help='Choose partner for whom the order will be invoiced and delivered.', states={'confirmed':[('readonly',True)]}),
         'marque': fields.many2one('car.marque','Marque', required=True),
@@ -465,6 +465,7 @@ class mrp_repair_line(osv.osv, ProductChangeMixin):
                         \n* The \'Done\' status is set automatically when repair order is completed.\
                         \n* The \'Cancelled\' status is set automatically when user cancel repair order.'),
     }
+    
     _defaults = {
      'state': lambda *a: 'draft',
      'product_uom_qty': lambda *a: 1,
