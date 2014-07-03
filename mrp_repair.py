@@ -87,7 +87,7 @@ class mrp_repair(osv.osv):
     _columns = {
         'name': fields.char('Repair Reference',size=24, required=True), #, readonly=True),
         '_create_date' : fields.datetime('Date'),
-        'partner_id' : fields.many2one('res.partner', 'Partner', select=True, help='Choose partner for whom the order will be invoiced and delivered.', states={'confirmed':[('readonly',True)]}),
+        'partner_id' : fields.many2one('res.partner', 'Partner', select=True, states={'confirmed':[('readonly',True)]}),
         'marque': fields.many2one('car.marque','Marque', required=True),
         'modele': fields.many2one('car.modele','Modele',domain="[('marque_id','=',marque)]", required=True),
         'matricule': fields.char('Matricule',size=24),
@@ -342,8 +342,8 @@ class mrp_repair(osv.osv):
                         'product_qty': move.product_uom_qty,
                         'product_uom': move.product_uom.id,
                         'partner_id': False,
-                        'location_id': move.location_id.id,
-                        'location_dest_id': move.location_dest_id.id,
+                        'location_id': 12, # this is the stock  stock_location table   #move.location_id.id,
+                        'location_dest_id': 7, # this is the production #move.location_dest_id.id,
                         'tracking_id': False,
                         'state': 'assigned',
                     })
@@ -351,7 +351,6 @@ class mrp_repair(osv.osv):
 
             self.write(cr, uid, [repair.id], {'state': 'done'})
         return res
-
 
 class ProductChangeMixin(object):
     def product_id_change(self, cr, uid, ids, pricelist, product, uom=False,
@@ -413,28 +412,8 @@ class mrp_repair_line(osv.osv, ProductChangeMixin):
             res[line.id] = cur_obj.round(cr, uid, cur, res[line.id])
         return res
 
-    def _get_location_id(self, cr, uid, ids, field_name, arg, context=None):   
-        res = {}     
-        args = []
-        warehouse_obj = self.pool.get('stock.warehouse')
-        for data in self.browse(cr, uid, ids, context=context):
-            warehouse_ids = warehouse_obj.search(cr, uid, args, context=context)
-            default_location = warehouse_obj.browse(cr, uid, warehouse_ids[0], context=context).lot_stock_id.id
-            res[data.id] = default_location
-        return res
-
-    def _get_location_dest_id(self, cr, uid, ids, field_name, arg, context=None):   
-        res = {}     
-        args = []
-        location_obj = self.pool.get('stock.location')
-        for data in self.browse(cr, uid, ids, context=context):
-            location_id = location_obj.search(cr, uid, [('usage','=','production')], context=context)
-            location_id = location_id and location_id[0] or False
-            res[data.id] = location_id
-        return res
-
     _columns = {
-        'name' : fields.char('Description',size=64,required=True),
+        'name' : fields.char('Description',size=64, required=True),
         'discount': fields.float('Discount (%)', digits=(16,2)),
         'repair_id': fields.many2one('mrp.repair', 'Repair Order Reference',ondelete='cascade', select=True),
         'product_id': fields.many2one('product.product', 'Product', required=True),
@@ -445,8 +424,6 @@ class mrp_repair_line(osv.osv, ProductChangeMixin):
         'product_uom_qty': fields.float('Quantity', digits_compute= dp.get_precision('Product Unit of Measure'), required=True),
         'product_uom': fields.many2one('product.uom', 'Product Unit of Measure', required=True),
         'invoice_line_id': fields.many2one('account.invoice.line', 'Invoice Line', readonly=True),
-        'location_id': fields.function(_get_location_id, type="many2one", relation="stock.location"),
-        'location_dest_id': fields.function(_get_location_dest_id, type="many2one", relation="stock.location"),
         'move_id': fields.many2one('stock.move', 'Inventory Move', readonly=True),
         'state': fields.selection([
                     ('draft','Draft'),
