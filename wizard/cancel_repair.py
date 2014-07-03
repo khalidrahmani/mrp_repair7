@@ -43,7 +43,7 @@ class repair_cancel(osv.osv_memory):
         repair_line_obj = self.pool.get('mrp.repair.line')
         repair_order = repair_order_obj.browse(cr, uid, record_id, context=context)
 
-        if repair_order.invoiced or repair_order.invoice_method == 'none':
+        if repair_order.invoiced : # or repair_order.invoice_method == 'none':
             repair_order_obj.action_cancel(cr, uid, [record_id], context=context)
         else:
             raise osv.except_osv(_('Warning!'),_('Repair order is not invoiced.'))

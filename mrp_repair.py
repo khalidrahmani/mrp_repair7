@@ -85,7 +85,7 @@ class mrp_repair(osv.osv):
         raise osv.except_osv(_('Invalid action !'), _('Vous n\'avez pas le droit de supprimer cet Ordre De Reparation!'))  
 
     _columns = {
-        'name': fields.char('Repair Reference',size=24, required=True, readonly=True),
+        'name': fields.char('Repair Reference',size=24, required=True), #, readonly=True),
         '_create_date' : fields.datetime('Date'),
         'partner_id' : fields.many2one('res.partner', 'Partner', select=True, help='Choose partner for whom the order will be invoiced and delivered.', states={'confirmed':[('readonly',True)]}),
         'marque': fields.many2one('car.marque','Marque', required=True),
@@ -115,12 +115,6 @@ class mrp_repair(osv.osv):
         'operations' : fields.one2many('mrp.repair.line', 'repair_id', 'Operation Lines', readonly=True, states={'draft':[('readonly',False)]}),
         'pricelist_id': fields.many2one('product.pricelist', 'Pricelist', help='Pricelist of the selected partner.'),
         'partner_invoice_id':fields.many2one('res.partner', 'Invoicing Address'),
-        'invoice_method':fields.selection([
-            ("none","No Invoice"),
-            ("b4repair","Before Repair"),
-            ("after_repair","After Repair")
-           ], "Invoice Method",
-            select=True, required=True, states={'draft':[('readonly',False)]}, readonly=True, help='Selecting \'Before Repair\' or \'After Repair\' will allow you to generate invoice before or after the repair is done respectively. \'No invoice\' means you don\'t want to generate invoice for this repair order.'),
         'invoice_id': fields.many2one('account.invoice', 'Invoice', readonly=True),        
         'symptomes': fields.text('Symptomes'),
         'company_id': fields.many2one('res.company', 'Company'),
@@ -147,10 +141,13 @@ class mrp_repair(osv.osv):
         'state': lambda *a: 'draft',
         '_create_date': fields.datetime.now,
         'name': lambda obj, cr, uid, context: obj.pool.get('ir.sequence').get(cr, uid, 'mrp.repair'),
-        'invoice_method': lambda *a: 'after_repair',
         'company_id': lambda self, cr, uid, context: self.pool.get('res.company')._company_default_get(cr, uid, 'mrp.repair', context=context),
         'pricelist_id': lambda self, cr, uid,context : self.pool.get('product.pricelist').search(cr, uid, [('type','=','sale')])[0]
     }
+    
+    _sql_constraints = [
+        ('uniq_name', 'unique(name)', "Le numero doit etre unique."),
+    ]
 
     def copy(self, cr, uid, id, default=None, context=None):
         if not default:
@@ -200,11 +197,8 @@ class mrp_repair(osv.osv):
     def action_confirm(self, cr, uid, ids, *args):
         mrp_line_obj = self.pool.get('mrp.repair.line')
         for o in self.browse(cr, uid, ids):
-            if (o.invoice_method == 'b4repair'):
-                self.write(cr, uid, [o.id], {'state': '2binvoiced'})
-            else:
-                self.write(cr, uid, [o.id], {'state': 'confirmed'})
-                mrp_line_obj.write(cr, uid, [l.id for l in o.operations], {'state': 'confirmed'})
+            self.write(cr, uid, [o.id], {'state': 'confirmed'})
+            mrp_line_obj.write(cr, uid, [l.id for l in o.operations], {'state': 'confirmed'})
         return True
 
     def action_cancel(self, cr, uid, ids, context=None):
@@ -233,62 +227,61 @@ class mrp_repair(osv.osv):
             if not (repair.partner_id.id and repair.partner_invoice_id.id):
                 raise osv.except_osv(_('No partner!'),_('You have to select a Partner Invoice Address in the repair form!'))
             comment = repair.symptomes
-            if (repair.invoice_method != 'none'):
-                if group and repair.partner_invoice_id.id in invoices_group:
-                    inv_id = invoices_group[repair.partner_invoice_id.id]
-                    invoice = inv_obj.browse(cr, uid, inv_id)
-                    invoice_vals = {
-                        'name': invoice.name +', '+repair.name,
-                        'origin': invoice.origin+', '+repair.name,
-                        'comment':(comment and (invoice.comment and invoice.comment+"\n"+comment or comment)) or (invoice.comment and invoice.comment or ''),
-                    }
-                    inv_obj.write(cr, uid, [inv_id], invoice_vals, context=context)
+            if group and repair.partner_invoice_id.id in invoices_group:
+                inv_id = invoices_group[repair.partner_invoice_id.id]
+                invoice = inv_obj.browse(cr, uid, inv_id)
+                invoice_vals = {
+                    'name': invoice.name +', '+repair.name,
+                    'origin': invoice.origin+', '+repair.name,
+                    'comment':(comment and (invoice.comment and invoice.comment+"\n"+comment or comment)) or (invoice.comment and invoice.comment or ''),
+                }
+                inv_obj.write(cr, uid, [inv_id], invoice_vals, context=context)
+            else:
+                if not repair.partner_id.property_account_receivable:
+                    raise osv.except_osv(_('Error!'), _('No account defined for partner "%s".') % repair.partner_id.name )
+                account_id = repair.partner_id.property_account_receivable.id
+                inv = {
+                    'name': repair.name,
+                    'origin':repair.name,
+                    'type': 'out_invoice',
+                    'account_id': account_id,
+                    'partner_id': repair.partner_id.id,
+                    'currency_id': repair.pricelist_id.currency_id.id,
+                    'comment': repair.symptomes,
+                    'fiscal_position': repair.partner_id.property_account_position.id
+                }
+                inv_id = inv_obj.create(cr, uid, inv)
+                invoices_group[repair.partner_invoice_id.id] = inv_id
+            self.write(cr, uid, repair.id, {'invoiced': True, 'invoice_id': inv_id})
+
+            for operation in repair.operations:
+                if group:
+                    name = repair.name + '-' + operation.name
                 else:
-                    if not repair.partner_id.property_account_receivable:
-                        raise osv.except_osv(_('Error!'), _('No account defined for partner "%s".') % repair.partner_id.name )
-                    account_id = repair.partner_id.property_account_receivable.id
-                    inv = {
-                        'name': repair.name,
-                        'origin':repair.name,
-                        'type': 'out_invoice',
-                        'account_id': account_id,
-                        'partner_id': repair.partner_id.id,
-                        'currency_id': repair.pricelist_id.currency_id.id,
-                        'comment': repair.symptomes,
-                        'fiscal_position': repair.partner_id.property_account_position.id
-                    }
-                    inv_id = inv_obj.create(cr, uid, inv)
-                    invoices_group[repair.partner_invoice_id.id] = inv_id
-                self.write(cr, uid, repair.id, {'invoiced': True, 'invoice_id': inv_id})
+                    name = operation.name
 
-                for operation in repair.operations:
-                    if group:
-                        name = repair.name + '-' + operation.name
-                    else:
-                        name = operation.name
+                if operation.product_id.property_account_income:
+                    account_id = operation.product_id.property_account_income.id
+                elif operation.product_id.categ_id.property_account_income_categ:
+                    account_id = operation.product_id.categ_id.property_account_income_categ.id
+                else:
+                    raise osv.except_osv(_('Error!'), _('No account defined for product "%s".') % operation.product_id.name )
 
-                    if operation.product_id.property_account_income:
-                        account_id = operation.product_id.property_account_income.id
-                    elif operation.product_id.categ_id.property_account_income_categ:
-                        account_id = operation.product_id.categ_id.property_account_income_categ.id
-                    else:
-                        raise osv.except_osv(_('Error!'), _('No account defined for product "%s".') % operation.product_id.name )
-
-                    invoice_line_id = inv_line_obj.create(cr, uid, {
-                        'invoice_id': inv_id,
-                        'name': name,
-                        'origin': repair.name,
-                        'account_id': account_id,
-                        'quantity': operation.product_uom_qty,
-                        'invoice_line_tax_id': [(6,0,[x.id for x in operation.tax_id])],
-                        'uos_id': operation.product_uom.id,
-                        'price_unit': operation.price_unit,
-                        'price_subtotal': operation.product_uom_qty*operation.price_unit,
-                        'discount':operation.discount,
-                        'product_id': operation.product_id and operation.product_id.id or False
-                    })
-                    repair_line_obj.write(cr, uid, [operation.id], {'invoiced': True, 'invoice_line_id': invoice_line_id})
-                res[repair.id] = inv_id
+                invoice_line_id = inv_line_obj.create(cr, uid, {
+                    'invoice_id': inv_id,
+                    'name': name,
+                    'origin': repair.name,
+                    'account_id': account_id,
+                    'quantity': operation.product_uom_qty,
+                    'invoice_line_tax_id': [(6,0,[x.id for x in operation.tax_id])],
+                    'uos_id': operation.product_uom.id,
+                    'price_unit': operation.price_unit,
+                    'price_subtotal': operation.product_uom_qty*operation.price_unit,
+                    'discount':operation.discount,
+                    'product_id': operation.product_id and operation.product_id.id or False
+                })
+                repair_line_obj.write(cr, uid, [operation.id], {'invoiced': True, 'invoice_line_id': invoice_line_id})
+            res[repair.id] = inv_id
         return res
 
     def action_repair_ready(self, cr, uid, ids, context=None):
@@ -309,11 +302,9 @@ class mrp_repair(osv.osv):
     def action_repair_end(self, cr, uid, ids, context=None):
         for order in self.browse(cr, uid, ids, context=context):
             val = {}
-            val['repaired'] = True
-            if (not order.invoiced and order.invoice_method=='after_repair'):
-                val['state'] = '2binvoiced'
-            elif (not order.invoiced and order.invoice_method=='b4repair'):
-                val['state'] = 'ready'
+            val['repaired'] = True            
+            if (not order.invoiced ):
+                val['state'] = '2binvoiced'            
             else:
                 pass
             self.write(cr, uid, [order.id], val)
@@ -343,19 +334,21 @@ class mrp_repair(osv.osv):
                 'type': 'out',
             })
             for move in repair.operations:
-                move_id = move_obj.create(cr, uid, {
-                    'picking_id': picking,
-                    'name': move.name,
-                    'product_id': move.product_id.id,
-                    'product_qty': move.product_uom_qty,
-                    'product_uom': move.product_uom.id,
-                    'partner_id': False,
-                    'location_id': move.location_id.id,
-                    'location_dest_id': move.location_dest_id.id,
-                    'tracking_id': False,
-                    'state': 'assigned',
-                })
-                repair_line_obj.write(cr, uid, [move.id], {'move_id': move_id, 'state': 'done'}, context=context)
+                if (move.product_id.type <> 'service') :
+                    move_id = move_obj.create(cr, uid, {
+                        'picking_id': picking,
+                        'name': move.name,
+                        'product_id': move.product_id.id,
+                        'product_qty': move.product_uom_qty,
+                        'product_uom': move.product_uom.id,
+                        'partner_id': False,
+                        'location_id': move.location_id.id,
+                        'location_dest_id': move.location_dest_id.id,
+                        'tracking_id': False,
+                        'state': 'assigned',
+                    })
+                    repair_line_obj.write(cr, uid, [move.id], {'move_id': move_id, 'state': 'done'}, context=context)
+
             self.write(cr, uid, [repair.id], {'state': 'done'})
         return res
 
