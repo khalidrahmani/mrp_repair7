@@ -36,6 +36,7 @@ class product_product(osv.osv):
     _columns = {
         'code_marque': fields.many2one('code.marque','Code Marque'),        
         'similar_products' : fields.one2many('similar.product.line', 'product_id_ref', 'Similar Products'),  
+        'default_code' : fields.char('Internal Reference', size=64, select=True, required=True),  
     }    
     
     _defaults = {
@@ -44,4 +45,7 @@ class product_product(osv.osv):
         'type' : 'product'   
     }
 
+    _sql_constraints = [
+        ('uniq_reference', 'unique(default_code)', "La reference doit etre unique"),
+    ]
 product_product()
