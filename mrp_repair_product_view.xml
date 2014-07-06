@@ -8,15 +8,46 @@
 			<field name="type">form</field>
 			<field name="arch" type="xml">				
 				<page string="Information" position="after">					
-					<page string="Produits Similaires" attrs="{'invisible':[('type','!=','product')]}">
+					<page string="Info Stock" attrs="{'invisible':[('type','!=','product')]}">
+						<group>
+							<field name="casier"/>
+							<field name="casier2"/>
+							<field name="code_marque"/>
+						</group>
                         <field name="similar_products">
                             <tree string="Produits Similaires" editable="bottom">
-                                <field name="product_id"/>
+                                <field name="product_id"  string="Produits Similaires"/>
                             </tree>
                         </field>
                     </page>
 				</page>
+				<field name="default_code" position="replace"/>				
+				<field name="ean13" position="replace"/>				
+				<field name="categ_id" position="replace"/>	
+				<div class="oe_title" position="replace">
+					<div class="oe_title">
+                            <div class="oe_edit_only">
+                                <label for="name" string="Nom"/>
+                            </div>
+                            <h1>
+                                <field name="name"/>
+                            </h1>
+                            <div class="oe_edit_only">
+                                <label for="name" string="Réference"/>
+                            </div>
+                            <h1>
+                                <field name="default_code"/>
+                            </h1>
+                            <div name="options" groups="base.group_user">
+                                <field name="sale_ok" invisible="1" />
+			                    <label for="sale_ok" invisible="1" />
+			                    <field name="purchase_ok" invisible="1" />
+			                    <label for="purchase_ok" invisible="1" />
+                            </div>
+                    </div>        
+                </div>	
 			</field>
+			
 		</record>
 	</data>
 </openerp>

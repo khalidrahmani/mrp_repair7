@@ -85,16 +85,16 @@ class mrp_repair(osv.osv):
         raise osv.except_osv(_('Invalid action !'), _('Vous n\'avez pas le droit de supprimer cet Ordre De Reparation!'))  
 
     _columns = {
-        'name': fields.char('Repair Reference',size=24, required=True), #, readonly=True),
-        '_create_date' : fields.datetime('Date'),
-        'partner_id' : fields.many2one('res.partner', 'Partner', select=True, states={'confirmed':[('readonly',True)]}),
-        'marque': fields.many2one('car.marque','Marque', required=True),
-        'modele': fields.many2one('car.modele','Modele',domain="[('marque_id','=',marque)]", required=True),
-        'matricule': fields.char('Matricule',size=24),
-        'chassis': fields.char('Chassis',size=24, required=True),
-        'telephone': fields.char('Telephone',size=24),        
-        'kilometrage': fields.char('Kilometrage',size=24),
-        'mec': fields.date('Mise en circulation'),                
+        'name': fields.char('Repair Reference',size=24, required=True, readonly=True, states={'draft':[('readonly',False)]}),
+        '_create_date' : fields.datetime('Date', states={'done':[('readonly',True)]}),
+        'partner_id' : fields.many2one('res.partner', 'Partner', select=True, states={'done':[('readonly',True)]}),
+        'marque': fields.many2one('car.marque','Marque', required=True, states={'done':[('readonly',True)]}),
+        'modele': fields.many2one('car.modele','Modele',domain="[('marque_id','=',marque)]", required=True, states={'done':[('readonly',True)]}),
+        'matricule': fields.char('Matricule',size=24, states={'done':[('readonly',True)]}),
+        'chassis': fields.char('Chassis',size=24, states={'done':[('readonly',True)]}),
+        'telephone': fields.char('Telephone',size=24, states={'done':[('readonly',True)]}),        
+        'kilometrage': fields.char('Kilometrage',size=24, states={'done':[('readonly',True)]}),
+        'mec': fields.date('Mise en circulation', states={'done':[('readonly',True)]}),                
         'state': fields.selection([
             ('draft','Quotation'),
             ('cancel','Cancelled'),
@@ -112,11 +112,11 @@ class mrp_repair(osv.osv):
             \n* The \'To be Invoiced\' status is used to generate the invoice before or after repairing done. \
             \n* The \'Done\' status is set when repairing is completed.\
             \n* The \'Cancelled\' status is used when user cancel repair order.'),
-        'operations' : fields.one2many('mrp.repair.line', 'repair_id', 'Operation Lines', readonly=True, states={'draft':[('readonly',False)]}),
+        'operations' : fields.one2many('mrp.repair.line', 'repair_id', 'Operation Lines', states={'done':[('readonly',True)]}),
         'pricelist_id': fields.many2one('product.pricelist', 'Pricelist', help='Pricelist of the selected partner.'),
         'partner_invoice_id':fields.many2one('res.partner', 'Invoicing Address'),
         'invoice_id': fields.many2one('account.invoice', 'Invoice', readonly=True),        
-        'symptomes': fields.text('Symptomes'),
+        'symptomes': fields.text('Symptomes', states={'done':[('readonly',True)]}),
         'company_id': fields.many2one('res.company', 'Company'),
         'invoiced': fields.boolean('Invoiced', readonly=True),
         'repaired': fields.boolean('Repaired', readonly=True),

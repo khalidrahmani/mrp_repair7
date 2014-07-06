@@ -36,6 +36,8 @@ class product_product(osv.osv):
     _columns = {
         'code_marque': fields.many2one('code.marque','Code Marque'),        
         'similar_products' : fields.one2many('similar.product.line', 'product_id_ref', 'Similar Products'),  
+        'casier' : fields.char('Casier', size=64),
+        'casier2' : fields.char('Casier2', size=64),          
         'default_code' : fields.char('Internal Reference', size=64, select=True, required=True),  
     }    
     
