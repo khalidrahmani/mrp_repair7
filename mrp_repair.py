@@ -86,7 +86,7 @@ class mrp_repair(osv.osv):
 
     _columns = {
         'name': fields.char('Repair Reference',size=24, required=True, readonly=True, states={'draft':[('readonly',False)]}),
-        '_create_date' : fields.datetime('Date', states={'done':[('readonly',True)]}),
+        'create_date2' : fields.datetime('Date', states={'done':[('readonly',True)]}),
         'partner_id' : fields.many2one('res.partner', 'Partner', select=True, states={'done':[('readonly',True)]}),
         'marque': fields.many2one('car.marque','Marque', required=True, states={'done':[('readonly',True)]}),
         'modele': fields.many2one('car.modele','Modele',domain="[('marque_id','=',marque)]", required=True, states={'done':[('readonly',True)]}),
@@ -139,7 +139,7 @@ class mrp_repair(osv.osv):
 
     _defaults = {
         'state': lambda *a: 'draft',
-        '_create_date': fields.datetime.now,
+        'create_date2': fields.datetime.now,
         'name': lambda obj, cr, uid, context: obj.pool.get('ir.sequence').get(cr, uid, 'mrp.repair'),
         'company_id': lambda self, cr, uid, context: self.pool.get('res.company')._company_default_get(cr, uid, 'mrp.repair', context=context),
         'pricelist_id': lambda self, cr, uid,context : self.pool.get('product.pricelist').search(cr, uid, [('type','=','sale')])[0]
@@ -369,6 +369,7 @@ class ProductChangeMixin(object):
                 result['tax_id'] = self.pool.get('account.fiscal.position').map_tax(cr, uid, partner.property_account_position, product_obj.taxes_id)
 
             result['name'] = product_obj.partner_ref
+            result['casier'] = product_obj.casier
             result['product_uom'] = product_obj.uom_id and product_obj.uom_id.id or False
             if not pricelist:
                 warning = {
@@ -417,11 +418,12 @@ class mrp_repair_line(osv.osv, ProductChangeMixin):
         'discount': fields.float('Discount (%)', digits=(16,2)),
         'repair_id': fields.many2one('mrp.repair', 'Repair Order Reference',ondelete='cascade', select=True),
         'product_id': fields.many2one('product.product', 'Product', required=True),
+        'casier' : fields.char('Casier',size=64),
         'invoiced': fields.boolean('Invoiced',readonly=True),
         'price_unit': fields.float('Unit Price', required=True, digits_compute= dp.get_precision('Product Price')),
         'price_subtotal': fields.function(_amount_line, string='Subtotal',digits_compute= dp.get_precision('Account')),
         'tax_id': fields.many2many('account.tax', 'repair_operation_line_tax', 'repair_operation_line_id', 'tax_id', 'Taxes'),
-        'product_uom_qty': fields.float('Quantity', digits_compute= dp.get_precision('Product Unit of Measure'), required=True),
+        'product_uom_qty': fields.float('Quantity', digits=(16,2), required=True),
         'product_uom': fields.many2one('product.uom', 'Product Unit of Measure', required=True),
         'invoice_line_id': fields.many2one('account.invoice.line', 'Invoice Line', readonly=True),
         'move_id': fields.many2one('stock.move', 'Inventory Move', readonly=True),

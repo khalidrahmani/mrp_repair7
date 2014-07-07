@@ -1,6 +1,23 @@
 <?xml version="1.0" ?>
 <openerp>
 	<data>
+
+
+        <record id="mrp_repair_product_product_tree_view" model="ir.ui.view">
+            <field name="name">product.product.tree</field>
+            <field name="model">product.product</field>
+            <field name="inherit_id" ref="product.product_product_tree_view" />
+            <field eval="7" name="priority"/>
+            <field name="arch" type="xml">                
+                    <field name="name" position="after">
+                    	<field name="casier"/>
+                    </field>	
+            </field>
+        </record>
+
+
+
+
 		<record model="ir.ui.view" id="view_product_mrp_repair_form">
 			<field name="name">product.normal.form</field>
 			<field name="model">product.product</field>

@@ -20,24 +20,18 @@
 ##############################################################################
 
 import time
-from openerp.report import report_sxw
+from   report import report_sxw
+from   tools  import amount_to_text
 
 class order(report_sxw.rml_parse):
     def __init__(self, cr, uid, name, context):
         super(order, self).__init__(cr, uid, name, context=context)
         self.localcontext.update({
             'time': time,
-            'total': self.total,
+            'amount_to_text': amount_to_text
         })
 
-    def total(self, repair):
-        total = 0.0
-        for operation in repair.operations:
-           total += operation.price_subtotal
-        total = total + repair.amount_tax
-        return total
-
+      
 report_sxw.report_sxw('report.repair.order','mrp.repair','addons/mrp_repair/report/order.rml',parser=order)
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
-
