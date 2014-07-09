@@ -199,7 +199,7 @@
       </tr>
     </blockTable>
     
-    <para style="P13">Ordre de Réparation N° : [[ o.name ]]</para>
+    <xpre style="P13"> Devis N° : [[ o.name ]]                              [[ o.symptomes.split("#")[1] or '' ]]</xpre>
 
     <blockTable colWidths="178.0,120.0,120.0,120.0" style="Table2">
       <tr>
@@ -278,7 +278,7 @@
       <blockTable colWidths="204.0,65.0,65.0,60.0,60.0,80.0" style="Table5">
         <tr>
           <td>
-            <para style="terp_default_9"><font>[[line.product_id.partner_ref]]</font></para>           
+            <para style="terp_default_9"><font>[[line.product_id.name_template]]</font></para>           
           </td>
           <td>
             <para style="terp_default_Right_9">[[ line.casier ]] </para>
@@ -345,6 +345,7 @@
       <font color="white"> </font>
     </para>    
     <para style="P13"> [[amount_to_text(o.amount_total, "fr", "DH")]]. </para>
+    <para style="P13"> [[ o.symptomes.split("#")[2] or '' ]] </para>
     <para style="P11">
       <font color="white"> </font>
     </para>

@@ -15,9 +15,6 @@
             </field>
         </record>
 
-
-
-
 		<record model="ir.ui.view" id="view_product_mrp_repair_form">
 			<field name="name">product.normal.form</field>
 			<field name="model">product.product</field>

@@ -1,5 +1,5 @@
 update /opt/openerp/server/openerp/tools with amount_to_text_en.py and amount_to_text.py 
-
+add module purchase_discount to addons folder
 Configuration > Traductions > Termes Traduits : 
  Purchases => Achats
  Unit(s)   => PCE

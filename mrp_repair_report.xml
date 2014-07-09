@@ -2,11 +2,20 @@
 <openerp>
     <data>
     <report
-        id="report_mrp_repair"
-        string="Quotation / Order"
+        header="True"
+        id="report_mrp_repair_devis"
+        string="Devis"
+        model="mrp.repair"
+        name="repair.devis"
+        rml="mrp_repair/report/devis.rml"
+        auto="False"/>    
+    <report
+        header="True"
+        id="report_mrp_repair_o"
+        string="Ordre de Reparation"
         model="mrp.repair"
         name="repair.order"
         rml="mrp_repair/report/order.rml"
-        auto="False"/>
+        auto="False"/>      
     </data>
 </openerp>

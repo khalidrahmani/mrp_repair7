@@ -112,7 +112,7 @@
                         </group>
                         <div class="oe_clear"/>
                     </page>
-                    <page string="Symptomes">
+                    <page string="Symptomes et Notes">
                         <field name="symptomes" placeholder="Symptomes ..."/>                        
                     </page>
                     <page string="Invoicing">

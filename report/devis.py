@@ -19,12 +19,19 @@
 #
 ##############################################################################
 
-import product
-import purchase
-import partner
-import mrp_repair
-import wizard
-import report
+import time
+from   report import report_sxw
+from   tools  import amount_to_text
+
+class devis(report_sxw.rml_parse):
+    def __init__(self, cr, uid, name, context):
+        super(devis, self).__init__(cr, uid, name, context=context)
+        self.localcontext.update({
+            'time': time,
+            'amount_to_text': amount_to_text
+        })
+
+      
+report_sxw.report_sxw('report.repair.devis','mrp.repair','addons/mrp_repair/report/order.rml',parser=devis)
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
-
