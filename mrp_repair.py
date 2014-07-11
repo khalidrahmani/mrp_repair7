@@ -4,6 +4,7 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from openerp.tools.translate import _
 import openerp.addons.decimal_precision as dp
+from lxml import etree
 
 class car_marque(osv.osv):
     
@@ -15,7 +16,7 @@ class car_marque(osv.osv):
     }
     
     _sql_constraints = [
-        ('uniq_name', 'unique(name)', "The Name must be unique"),
+        ('uniq_name', 'unique(name)', "Cette marque exist deja."),
     ]
     
 car_marque()
@@ -29,15 +30,62 @@ class car_modele(osv.osv):
         'name': fields.char("Modele", size=64),
         'marque_id': fields.many2one('car.marque', 'Marque'),
     }
-    _sql_constraints = [
-        ('uniq_name', 'unique(name)', "The Name must be unique"),
-    ]
         
 car_modele()
 
 class mrp_repair(osv.osv):
     _name = 'mrp.repair'
     _description = 'Repair Order'
+    _order = "create_date2 desc"
+
+    def fields_view_get(self, cr, uid, view_id=None, view_type='form', context=None, toolbar=False, submenu=False):        
+        if context is None: context = {}       
+        res = super(mrp_repair, self).fields_view_get(cr, uid, view_id=view_id, view_type=view_type, context=context, toolbar=toolbar, submenu=False)
+
+        root = etree.fromstring(unicode(res['arch'], 'utf8'))            
+        nodes = root.xpath("//field[@name='operations']")
+        group_obj = self.pool.get('res.groups')
+        
+        group_magasin_id = group_obj.search(cr, uid, [('name','=', 'Magasinier')])
+        group_atelier_id = group_obj.search(cr, uid, [('name','=', 'Atelier')])
+        user_obj = self.pool.get('res.users')
+        user = user_obj.browse(cr, uid, uid, context=context)
+        group_ids = []
+        domain_type = []
+        for grp in user.groups_id:
+            group_ids.append(grp.id)
+        if  (group_magasin_id[0] in  group_ids):
+            domain_type.append('product')
+        if  (group_atelier_id[0] in  group_ids):
+            domain_type.append('service')
+
+        u =  """
+            <field name="operations">                         
+                <tree string="Operations" editable="bottom">
+                    <field name="product_id" attrs="{'readonly':[('product_type','in',['service','product']),('product_type','not in',%s)]}" domain="[('type','in',%s)]" on_change="product_id_change(parent.pricelist_id,product_id,product_uom,product_uom_qty, parent.partner_id)"/>
+                    <field name="name" invisible="1"/>
+                    <field name="product_type" invisible="1"/>
+                    <field name="casier" groups="mrp_repair.group_magasinier"/>
+                    <field name="product_uom_qty" string="Quantity" attrs="{'readonly':[('product_type','in',['service','product']),('product_type','not in',%s)]}"/>
+                    <field name="product_uom" string="Unit of Measure" invisible="1"/>
+                    <field name="price_unit" attrs="{'readonly':[('product_type','in',['service','product']),('product_type','not in',%s)]}"/>
+                    <field name="discount" attrs="{'readonly':[('product_type','in',['service','product']),('product_type','not in',%s)]}"/>
+                    <field name="tax_id" widget="many2many_tags" invisible="1"/>
+                    <field name="price_subtotal"/>
+                </tree>
+            </field>
+            """ % (domain_type, domain_type, domain_type, domain_type, domain_type)
+
+        u = etree.fromstring(unicode(u, 'utf8')) 
+        for node in nodes:
+            node.getparent().replace(node, u)
+        xarch, xfields = self._view_look_dom_arch(cr, uid, root, view_id, context=context)
+        res['arch'] = xarch
+        res['fields'] = xfields    
+        res['arch'] = etree.tostring(root)
+
+        return res
+
 
     def _amount_untaxed(self, cr, uid, ids, field_name, arg, context=None):
         res = {}
@@ -85,16 +133,16 @@ class mrp_repair(osv.osv):
         raise osv.except_osv(_('Invalid action !'), _('Vous n\'avez pas le droit de supprimer cet Ordre De Reparation!'))  
 
     _columns = {
-        'name': fields.char('Repair Reference',size=24, required=True, readonly=True, states={'draft':[('readonly',False)]}),
-        'create_date2' : fields.datetime('Date', states={'done':[('readonly',True)]}),
-        'partner_id' : fields.many2one('res.partner', 'Partner', select=True, states={'done':[('readonly',True)]}),
-        'marque': fields.many2one('car.marque','Marque', required=True, states={'done':[('readonly',True)]}),
-        'modele': fields.many2one('car.modele','Modele',domain="[('marque_id','=',marque)]", required=True, states={'done':[('readonly',True)]}),
-        'matricule': fields.char('Matricule',size=24, states={'done':[('readonly',True)]}),
-        'chassis': fields.char('Chassis',size=24, states={'done':[('readonly',True)]}),
-        'telephone': fields.char('Telephone',size=24, states={'done':[('readonly',True)]}),        
-        'kilometrage': fields.char('Kilometrage',size=24, states={'done':[('readonly',True)]}),
-        'mec': fields.date('Mise en circulation', states={'done':[('readonly',True)]}),                
+        'name': fields.char('Repair Reference',size=24, required=True, readonly=True, states={'done':[('readonly',True)], 'avoir':[('readonly',True)]}),
+        'create_date2' : fields.datetime('Date', states={'done':[('readonly',True)], 'avoir':[('readonly',True)]}),
+        'partner_id' : fields.many2one('res.partner', 'Partner', select=True, states={'done':[('readonly',True)], 'avoir':[('readonly',True)]}),
+        'marque': fields.many2one('car.marque','Marque', required=True, states={'done':[('readonly',True)], 'avoir':[('readonly',True)]}),
+        'modele': fields.many2one('car.modele','Modele',domain="[('marque_id','=',marque)]", required=True, states={'done':[('readonly',True)], 'avoir':[('readonly',True)]}),
+        'matricule': fields.char('Matricule',size=24, states={'done':[('readonly',True)], 'avoir':[('readonly',True)]}),
+        'chassis': fields.char('Chassis',size=24, states={'done':[('readonly',True)], 'avoir':[('readonly',True)]}),
+        'telephone': fields.char('Telephone',size=24, states={'done':[('readonly',True)], 'avoir':[('readonly',True)]}),
+        'kilometrage': fields.char('Kilometrage',size=24, states={'done':[('readonly',True)], 'avoir':[('readonly',True)]}),
+        'mec': fields.date('Mise en circulation', states={'done':[('readonly',True)], 'avoir':[('readonly',True)]}),
         'state': fields.selection([
             ('draft','Quotation'),
             ('cancel','Cancelled'),
@@ -104,7 +152,7 @@ class mrp_repair(osv.osv):
             ('2binvoiced','To be Invoiced'),
             ('invoice_except','Invoice Exception'),
             ('done','Repaired'),
-            ('avoir','avoir')
+            ('avoir','Avoir')
             ], 'Status', readonly=True, track_visibility='onchange',
             help=' * The \'Draft\' status is used when a user is encoding a new and unconfirmed repair order. \
             \n* The \'Confirmed\' status is used when a user confirms the repair order. \
@@ -112,11 +160,11 @@ class mrp_repair(osv.osv):
             \n* The \'To be Invoiced\' status is used to generate the invoice before or after repairing done. \
             \n* The \'Done\' status is set when repairing is completed.\
             \n* The \'Cancelled\' status is used when user cancel repair order.'),
-        'operations' : fields.one2many('mrp.repair.line', 'repair_id', 'Operation Lines', states={'done':[('readonly',True)]}),
+        'operations' : fields.one2many('mrp.repair.line', 'repair_id', 'Operation Lines', states={'done':[('readonly',True)], 'avoir':[('readonly',True)]}),
         'pricelist_id': fields.many2one('product.pricelist', 'Pricelist', help='Pricelist of the selected partner.'),
         'partner_invoice_id':fields.many2one('res.partner', 'Invoicing Address'),
         'invoice_id': fields.many2one('account.invoice', 'Invoice', readonly=True),        
-        'symptomes': fields.text('Symptomes', states={'done':[('readonly',True)]}),
+        'symptomes': fields.text('Symptomes', states={'done':[('readonly',True)], 'avoir':[('readonly',True)]}),
         'company_id': fields.many2one('res.company', 'Company'),
         'invoiced': fields.boolean('Invoiced', readonly=True),
         'repaired': fields.boolean('Repaired', readonly=True),
@@ -247,7 +295,7 @@ class mrp_repair(osv.osv):
                     'account_id': account_id,
                     'partner_id': repair.partner_id.id,
                     'currency_id': repair.pricelist_id.currency_id.id,
-                    'comment': repair.symptomes,
+                    #'comment': repair.symptomes,
                     'fiscal_position': repair.partner_id.property_account_position.id
                 }
                 inv_id = inv_obj.create(cr, uid, inv)
@@ -371,6 +419,8 @@ class ProductChangeMixin(object):
             result['name'] = product_obj.partner_ref
             result['casier'] = product_obj.casier
             result['product_uom'] = product_obj.uom_id and product_obj.uom_id.id or False
+            result['product_type'] = product_obj.type
+
             if not pricelist:
                 warning = {
                     'title':'No Pricelist!',
@@ -398,6 +448,7 @@ class ProductChangeMixin(object):
 class mrp_repair_line(osv.osv, ProductChangeMixin):
     _name = 'mrp.repair.line'
     _description = 'Repair Line'
+    _order = "product_type asc"
 
     def copy_data(self, cr, uid, id, default=None, context=None):
         if not default: default = {}
@@ -414,17 +465,18 @@ class mrp_repair_line(osv.osv, ProductChangeMixin):
         return res
 
     _columns = {
-        'name' : fields.char('Description',size=64, required=True),
+        'name' : fields.char('Description',size=32, required=True),        
         'discount': fields.float('Discount (%)', digits=(16,2)),
         'repair_id': fields.many2one('mrp.repair', 'Repair Order Reference',ondelete='cascade', select=True),
         'product_id': fields.many2one('product.product', 'Product', required=True),
-        'casier' : fields.char('Casier',size=64),
+        'casier' : fields.char('Casier',size=16),
+        'product_type' : fields.char('Product Type',size=16),
         'invoiced': fields.boolean('Invoiced',readonly=True),
         'price_unit': fields.float('Unit Price', required=True, digits_compute= dp.get_precision('Product Price')),
         'price_subtotal': fields.function(_amount_line, string='Subtotal',digits_compute= dp.get_precision('Account')),
         'tax_id': fields.many2many('account.tax', 'repair_operation_line_tax', 'repair_operation_line_id', 'tax_id', 'Taxes'),
         'product_uom_qty': fields.float('Quantity', digits=(16,2), required=True),
-        'product_uom': fields.many2one('product.uom', 'Product Unit of Measure', required=True),
+        'product_uom': fields.many2one('product.uom', 'Product Unit of Measure'),
         'invoice_line_id': fields.many2one('account.invoice.line', 'Invoice Line', readonly=True),
         'move_id': fields.many2one('stock.move', 'Inventory Move', readonly=True),
         'state': fields.selection([
@@ -437,11 +489,32 @@ class mrp_repair_line(osv.osv, ProductChangeMixin):
                         \n* The \'Done\' status is set automatically when repair order is completed.\
                         \n* The \'Cancelled\' status is set automatically when user cancel repair order.'),
     }
-    
+
     _defaults = {
      'state': lambda *a: 'draft',
-     'product_uom_qty': lambda *a: 1,
+     'product_uom_qty': lambda *a: 1
     }
+
+    def unlink(self, cr, uid, ids, context=None):
+        repair_line = self.browse(cr, uid, ids[0], context=context)
+        group_obj = self.pool.get('res.groups')
+        group_magasin_id = group_obj.search(cr, uid, [('name','=', 'Magasinier')])
+        group_atelier_id = group_obj.search(cr, uid, [('name','=', 'Atelier')])
+        user_obj = self.pool.get('res.users')
+        user = user_obj.browse(cr, uid, uid, context=context)
+        group_ids = []
+        domain_type = []
+        for grp in user.groups_id:
+            group_ids.append(grp.id)
+        if  (group_magasin_id[0] in  group_ids):
+            domain_type.append('product')
+        if  (group_atelier_id[0] in  group_ids):
+            domain_type.append('service')
+
+        if (repair_line.product_type not in domain_type):
+            raise osv.except_osv(_('Invalid action !'), _('Vous n\'avez pas le droit de supprimer cette ligne! "%s" ') % (repair_line.product_id.default_code))
+        osv.osv.unlink(self, cr, uid, ids, context=context)
+        return True
 
     def _quantity_exists_in_warehouse(self, cr, uid, ids, context=None):
         repair_line = self.browse(cr, uid, ids[0], context=context)

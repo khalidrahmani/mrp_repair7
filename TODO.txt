@@ -1,5 +1,12 @@
 update /opt/openerp/server/openerp/tools with amount_to_text_en.py and amount_to_text.py 
-add module purchase_discount to addons folder
+
 Configuration > Traductions > Termes Traduits : 
  Purchases => Achats
  Unit(s)   => PCE
+
+ migrate database
+ yahya@yahya:~$ sudo -u postgres createuser -s yahya
+ $ virtualenv sandbox
+ $ sandbox/bin/pip install anybox.migration.openerp
+ $ sandbox/bin/migrate -h
+ yahya@yahya:~$ sandbox/bin/migrate -s nurwagen_tanger -t nurwagen_7 -r account_invoice

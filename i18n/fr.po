@@ -461,7 +461,7 @@ msgstr ""
 #: field:mrp.repair.fee,invoiced:0
 #: field:mrp.repair.line,invoiced:0
 msgid "Invoiced"
-msgstr "Facturée"
+msgstr "Facturé"
 
 #. module: mrp_repair
 #: field:mrp.repair.fee,product_uom:0

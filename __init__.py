@@ -22,6 +22,7 @@
 import product
 import purchase
 import partner
+import account_invoice
 import mrp_repair
 import wizard
 import report

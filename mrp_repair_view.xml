@@ -6,14 +6,17 @@
         <field name="name">mrp.repair.tree</field>
         <field name="model">mrp.repair</field>
         <field name="arch" type="xml">
-            <tree string="Repairs order" colors="gray:state in ('done','cancel');black:state not in ('done','cancel');blue:state=='draft'">
+            <tree string="Repairs order" 
+                  colors="gray:state in ('done','cancel','avoir');
+                          black:state in ('confirmed','under_repair','ready','2binvoiced');
+                          blue:state in ('draft')">
                 <field name="name" />
+                <field name="partner_id" string="Client"/>
                 <field name="create_date2" />
                 <field name="mec"/>
                 <field name="matricule"/>
                 <field name="chassis"/>
-                <field name="marque"/>
-                <field name="partner_id"/>
+                <field name="marque"/>                
                 <field name="company_id" groups="base.group_multi_company" invisible="1"/>
                 <field name="state"/>
             </tree>
@@ -60,36 +63,11 @@
                     </group>
                 <notebook>
                     <page string="Operations">
-                        <field name="operations">
-                            <form string="Operations" version="7.0">
-                                <notebook>
-                                    <page string="Repair Line">
-                                        <group col="4">
-                                            <field name="name"/>
-                                            <field name="casier"/>
-                                            <field name="product_id" on_change="product_id_change(parent.pricelist_id,product_id,product_uom,product_uom_qty, parent.partner_id)"/>
-                                            <label for="product_uom_qty"/>
-                                            <div>
-                                                <field name="product_uom_qty" class="oe_inline"/>
-                                                <field name="product_uom" class="oe_inline" groups="product.group_uom"/>
-                                            </div>
-                                            <field name="price_unit"/>
-                                            <field name="discount"/>
-                                            <field name="price_subtotal"/>
-                                            <field name="tax_id" widget="many2many_tags" domain="[('parent_id','=',False),('type_tax_use','&lt;&gt;','purchase')]" />
-                                            <field name="invoiced"/>
-                                        </group>
-                                    </page>
-                                    <page string="History">
-                                        <group>                                            
-                                            <field name="invoice_line_id"/>
-                                        </group>
-                                    </page>
-                                 </notebook>
-                            </form>
+                        <field name="operations">                         
                             <tree string="Operations" editable="bottom">
                                 <field name="product_id" on_change="product_id_change(parent.pricelist_id,product_id,product_uom,product_uom_qty, parent.partner_id)"/>
-                                <field name='name' invisible="1"/>
+                                <field name="name" invisible="1"/>
+                                <field name="product_type" invisible="1"/>
                                 <field name="casier"/>
                                 <field name="product_uom_qty" string="Quantity"/>
                                 <field name="product_uom" string="Unit of Measure" groups="product.group_uom"/>
@@ -100,13 +78,12 @@
                             </tree>
                         </field>
                         <group class="oe_subtotal_footer oe_right">
-                            <field name="amount_untaxed" sum="Untaxed amount"/>
-                            
+                            <field name="amount_untaxed" sum="Untaxed amount"/>                            
                             <field name="amount_tax"/>
                             <div class="oe_subtotal_footer_separator oe_inline">
                                 <label for="amount_total" />
                                 <button name="button_dummy"
-                                    states="draft" string="(update)" type="object" class="oe_edit_only oe_link"/>
+                                     string="(update)" type="object" class="oe_edit_only oe_link"/>
                             </div>
                             <field name="amount_total" nolabel="1" sum="Total amount" class="oe_subtotal_footer_separator"/>
                         </group>
